@@ -46,7 +46,7 @@ process SRATOOLS_ACQUIRE {
         pigz -t 'fastq/${run_accession}_1.fastq.gz' 'fastq/${run_accession}_2.fastq.gz'
         mv -- 'fastq/${run_accession}_1.fastq.gz' '${run_accession}_R1.fastq.gz'
         mv -- 'fastq/${run_accession}_2.fastq.gz' '${run_accession}_R2.fastq.gz'
-    } > '${run_accession}.sra.log' 2>&1
+    } 2>&1 | tee '${run_accession}.sra.log'
 
     # Clean task-local temporaries after validation; keep cached outputs in work/.
     rm -rf -- sra_cache fasterq_tmp fastq task_home
