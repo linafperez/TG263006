@@ -2,8 +2,8 @@ process FILTER_CONTIGS {
     tag "${meta.id}"
     label 'process_single'
 
-    // Official Bash image includes BusyBox awk; Conda declares GNU awk.
-    container 'bash:5.2.37'
+    // Reuse the tested SRA utility image; it provides /bin/bash, GNU awk and coreutils.
+    container "${params.sraContainer}"
     conda "${moduleDir}/environment.yml"
 
     input:
