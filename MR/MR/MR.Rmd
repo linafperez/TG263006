@@ -1,0 +1,465 @@
+---
+title: "Gene Annotation of Harmonised MR Data (PD)"
+author: Alexis Felipe Rojas Cruz
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cerulean  
+    highlight: tango
+---
+
+# 1) Setting
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.keep = 'all',
+  dpi = 600,
+  fig.width = 8,
+  fig.height = 8,
+  fig.pos = "center"
+)
+```
+
+# - Packages installation
+
+In this section, we ensure that all necessary packages are installed.
+
+```{r}
+# Ensure BiocManager is available
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+
+# Required packages
+required_packages <- c("tidyverse", "biomaRt", "TwoSampleMR", "readr", "remotes", "devtools")
+
+# Install missing packages
+missing_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if (length(missing_packages)) BiocManager::install(missing_packages, ask = FALSE)
+```
+
+```{r}
+# Install TwoSampleMR from GitHub
+remotes::install_github("MRCIEU/TwoSampleMR")
+# Install MR-PRESSO from Github
+devtools::install_github("rondolab/MR-PRESSO")
+# Install foresploter from Github
+devtools::install_github("adayim/forestploter")
+```
+
+# - Loading packages
+
+Here, we load the necessary packages for our analysis.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(biomaRt)
+library(TwoSampleMR)
+library(MRPRESSO)
+library(forestploter)
+library(readr)
+library(dplyr)
+library(grid)
+```
+
+# - 2) Load harmonised data
+
+```{r message=FALSE, warning=FALSE}
+# Load harmonised data using read.table
+pd_data_raw <- read.table("PD_harmonised.txt", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+
+# View first few rows
+head(pd_data_raw)
+```
+
+# - 3) Query Ensembl with biomaRt
+
+```{r message=FALSE, warning=FALSE}
+# Extract unique SNPs
+snp_list <- unique(pd_data_raw$SNP)
+
+# Use Ensembl SNP mart
+ensembl <- useEnsembl(biomart = "ENSEMBL_MART_SNP", dataset = "hsapiens_snp", host = "https://www.ensembl.org")
+
+
+# Fetch SNP annotations
+gene_info <- getBM(
+  attributes = c(
+    "refsnp_id",
+    "chr_name",
+    "chrom_start",
+    "allele",
+    "consequence_type_tv",
+    "ensembl_gene_name"
+  ),
+  filters = "snp_filter",
+  values = snp_list,
+  mart = ensembl
+)
+
+# Get the unique Ensembl gene IDs from SNPs
+gene_ids <- unique(gene_info$ensembl_gene_name)
+
+mart <- useMart(
+  biomart = "ENSEMBL_MART_ENSEMBL",
+  dataset = "hsapiens_gene_ensembl",
+  path = "/biomart/martservice",
+  host = "https://www.ensembl.org"
+)
+
+# Retrieve gene annotations
+gene_name_map <- getBM(
+  attributes = c(
+    "ensembl_gene_id",
+    "hgnc_symbol",
+    "gene_biotype"
+  ),
+  filters = "ensembl_gene_id",
+  values = gene_ids,
+  mart = mart
+)
+
+
+# Merge annotations with harmonised dataset
+pd_data <- pd_data_raw %>%
+  left_join(gene_info, by = c("SNP" = "refsnp_id")) %>%
+  rename(ensembl_gene_id = ensembl_gene_name) %>%
+  left_join(gene_name_map, by = "ensembl_gene_id")
+
+# Preview annotated data
+head(pd_data)
+
+#save data
+
+write.table(pd_data, file = "PD_data.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
+```
+
+# - 4) Perform MR using IVW, WME, MR-Egger
+
+```{r message=FALSE, warning=FALSE}
+pd_data <- read.table("PD_data-annotated.tsv", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+
+PD_MR <- mr(pd_data, method_list = c("mr_ivw", "mr_weighted_median", "mr_wald_ratio", "mr_weighted_mode"))
+
+# Calculate odds ratios
+PD_MR <- generate_odds_ratios(PD_MR)
+
+# View MR results
+print(PD_MR)
+
+write.csv(PD_MR, "./MR_results/PD_MR_results.csv", row.names = FALSE, quote = FALSE)
+```
+
+# - 5) Sensitivity Analyses
+
+# Heterogeneity Test
+
+```{r message=FALSE, warning=FALSE}
+heterogeneity <- mr_heterogeneity(pd_data)
+print(heterogeneity)
+
+write.csv(heterogeneity, "./Sensitivity_analysis/Heterogeneity/heterogeneity_results.csv", row.names = FALSE, quote = FALSE)
+
+```
+
+# Pleiotropy Test
+
+```{r message=FALSE, warning=FALSE}
+pleiotropy <- mr_pleiotropy_test(pd_data)
+print(pleiotropy)
+
+write.csv(pleiotropy, "./Sensitivity_analysis/Pleiotropy//pleiotropy_results.csv", row.names = FALSE, quote = FALSE)
+
+```
+
+# MR-PRESSO
+
+```{r message=FALSE, warning=FALSE}
+mr_presso <- mr_presso(BetaOutcome = "beta.outcome",
+                               BetaExposure = "beta.exposure",
+                               SdOutcome = "se.outcome",
+                               SdExposure = "se.exposure",
+                               OUTLIERtest = TRUE,
+                               DISTORTIONtest = TRUE,
+                               data = pd_data,
+                               NbDistribution = 1000,
+                               SignifThreshold = 0.05)
+print(mr_presso)
+
+write.csv(mr_presso, "./Sensitivity_analysis/MR-PRESSO/mr-presso_results.csv", row.names = FALSE, quote = FALSE)
+
+```
+
+# Leave-One-Out Analysis
+
+```{r message=FALSE, warning=FALSE}
+loo <- mr_leaveoneout(pd_data)
+print(loo)
+
+write.csv(loo, "./Sensitivity_analysis/Leave-one-out/leave_one_out_results.csv", row.names = FALSE, quote = FALSE)
+
+```
+
+# - 6 Plots
+
+# MR Scatter Plot
+
+```{r message=FALSE, warning=FALSE}
+scatter_plot <- mr_scatter_plot(PD_MR, pd_data)
+scatter_plot
+ggsave("./MR_results/MR_scatter_plot.pdf", scatter_plot[[1]], width = 7, height = 5)
+```
+
+# Leave-One-Out Plot
+
+```{r message=FALSE, warning=FALSE}
+loo_plot <- mr_leaveoneout_plot(loo)
+loo_plot
+ggsave("./Sensitivity_analysis/Leave-one-out/leave_one_out_plot.pdf", loo_plot[[1]], width = 7, height = 5)
+```
+
+# Forest Plot
+
+```{r message=FALSE, warning=FALSE}
+forest_plot <- mr_forest_plot(loo)
+forest_plot
+ggsave("./MR_results/forest_plot.pdf", forest_plot[[1]], width = 7, height = 8)
+```
+
+# Funnel Plot
+
+```{r message=FALSE, warning=FALSE}
+PD_MR_singlesnp <- mr_singlesnp(pd_data)
+
+funnel_plot <- mr_funnel_plot(PD_MR_singlesnp)
+funnel_plot
+ggsave("./MR_results/funnel_plot.pdf", funnel_plot[[1]], width = 7, height = 8)
+```
+# Forest plot
+
+```{r message=FALSE, warning=FALSE}
+
+# DATA PREPARATION 
+
+# Format OR and 95% CI 
+PD_MR$`OR (95% CI)` <- sprintf("%.2f (%.2f to %.2f)",
+                                       PD_MR$or,
+                                       PD_MR$or_lci95,
+                                       PD_MR$or_uci95)
+
+# Format p-values: scientific notation if <0.001, else 3 decimal places
+PD_MR$`P-value` <- ifelse(PD_MR$pval < 0.001,
+                                  formatC(PD_MR$pval, format = "e", digits = 2),
+                                  sprintf("%.3f", PD_MR$pval))
+
+# Calculate standard error from confidence intervals
+PD_MR$se <- (log(PD_MR$or_uci95) - log(PD_MR$or))/1.96
+
+# Create blank column that will hold the confidence interval graphics
+PD_MR$` ` <- paste(rep(" ", 25), collapse = " ")  
+
+# CREATE PLOT DATA FRAME 
+
+# Assemble all components into a data frame for plotting
+dt <- data.frame(
+  Method = PD_MR$method,      
+  SNPs = as.character(PD_MR$nsnp),  
+  `OR (95% CI)` = PD_MR$`OR (95% CI)`,  
+  ` ` = PD_MR$` `,            
+  `P-value` = PD_MR$`P-value`, 
+  
+  # Numeric versions for calculations (not displayed directly)
+  estimate = PD_MR$or,        
+  low = PD_MR$or_lci95,      
+  high = PD_MR$or_uci95,      
+  se = PD_MR$se,            
+  
+  stringsAsFactors = FALSE,
+  check.names = FALSE  # Preserve special characters in column names
+)
+
+# DEFINE PLOT THEME 
+
+# Customize all visual aspects of the forest plot
+tm <- forest_theme(
+  # Text sizing
+  base_size = 12,             
+  base_family = "Helvetica",       
+  
+  # Confidence interval appearance
+  ci_pch = 18,                
+  ci_col = "#1E64B0",         
+  ci_lwd = 2,                
+  ci_alpha = 0.8,             
+  ci_Theight = 0.3,           
+  
+  # Reference line at OR=1
+  refline_col = "#E41A1C",    
+  refline_lwd = 1.5,         
+  refline_lty = "dashed", 
+  
+  # Spacing and layout
+  colgap = unit(8, "mm"),    
+  header_height = unit(20, "mm"), 
+  plot_margin = unit(c(1, 2, 1, 1), "cm")  
+)
+
+# CREATE FOREST PLOT 
+
+# Generate the forest plot object
+p <- forest(
+  # Columns to display (in order)
+  dt[, c("Method", "SNPs", " ", "OR (95% CI)", "P-value")],
+  
+ 
+  est = dt$estimate,   
+  lower = dt$low,      
+  upper = dt$high,    
+  sizes = 0.4,         
+  
+  # Plot configuration
+  ci_column = 3,      
+  ref_line = 1,        
+  arrow_lab = c("Protective", "Risk"),  
+  x_trans = "log",     
+  xlim = c(0.3, 3),    
+  ticks_at = c(0.3, 0.5, 1, 2, 3),  
+  
+  # Apply our custom theme
+  theme = tm
+)
+
+# DISPLAY THE PLOT 
+
+# Render the plot with specified dimensions
+plot(p, vp = viewport(width = unit(8, "inches"), 
+                     height = unit(2, "inches")))
+
+# To save: 
+pdf("./Forest/forest_plot.pdf", width = 8, height = 2)  # Adjust dimensions as needed
+plot(p)  # Your forest plot object
+dev.off()  # Close the graphics device
+
+```
+
+# Forest plot for each SNP
+
+```{r message=FALSE, warning=FALSE}
+
+pd_snps <- pd_data %>%
+  mutate(
+    or = exp(beta.outcome),
+    or_lci95 = exp(beta.outcome - 1.96 * se.outcome),
+    or_uci95 = exp(beta.outcome + 1.96 * se.outcome)
+  ) %>%
+  dplyr::select(
+    Region,
+    taxon,
+    SNP,
+    hgnc_symbol,
+    pval.outcome,
+    or,
+    or_lci95,
+    or_uci95
+  )
+print(pd_snps)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+
+# DATA PREPARATION
+
+# SORT BY P-VALUE (ascending order)
+pd_snps <- pd_snps[order(pd_snps$pval.outcome), ]
+
+# Convert SNP names to factor to preserve sorting order
+pd_snps$SNP <- factor(pd_snps$SNP, levels = pd_snps$SNP)
+
+# Format OR and 95% CI 
+pd_snps$`OR (95% CI)` <- sprintf("%.2f (%.2f to %.2f)",
+                               pd_snps$or,
+                               pd_snps$or_lci95,
+                               pd_snps$or_uci95)
+
+# Format p-values
+pd_snps$`P-value` <- ifelse(pd_snps$pval.outcome < 0.001,
+                          formatC(pd_snps$pval.outcome, format = "e", digits = 2),
+                          sprintf("%.3f", pd_snps$pval.outcome))
+
+# Create blank column for forest plot visualization (immediately after Gene)
+pd_snps$` ` <- paste(rep(" ", 20), collapse = " ")  
+
+# CREATE PLOT DATA FRAME
+dt <- data.frame(
+  Region = pd_snps$Region,
+  Taxon = pd_snps$taxon,
+  SNP = pd_snps$SNP,
+  Gene = pd_snps$hgnc_symbol,
+  ` ` = pd_snps$` `,            # Forest plot visualization goes here
+  `OR (95% CI)` = pd_snps$`OR (95% CI)`,  
+  `P-value` = pd_snps$`P-value`,
+  
+  # Numeric versions for plotting
+  estimate = pd_snps$or,
+  low = pd_snps$or_lci95,
+  high = pd_snps$or_uci95,
+  stringsAsFactors = FALSE,
+  check.names = FALSE
+)
+
+# DEFINE PLOT THEME
+tm <- forest_theme(
+  base_size = 10,
+  base_family = "Helvetica",
+  ci_pch = 18,
+  ci_col = "#1E64B0",
+  ci_lwd = 2,
+  ci_alpha = 0.8,
+  ci_Theight = 0.3,
+  refline_col = "#E41A1C",
+  refline_lwd = 1.5,
+  refline_lty = "dashed",
+  colgap = unit(6, "mm"),
+  header_height = unit(25, "mm"),
+  plot_margin = unit(c(1, 2, 1, 1), "cm")
+)
+
+# CREATE FOREST PLOT
+p2 <- forest(
+  # Column order with visualization after Gene
+  dt[, c("Region", "Taxon", "SNP", "Gene", " ", "OR (95% CI)", "P-value")],
+  
+  est = dt$estimate,
+  lower = dt$low,
+  upper = dt$high,
+  sizes = 0.4,
+  ci_column = 5,  # This is now the blank column after Gene
+  ref_line = 1,
+  arrow_lab = c("Protective", "Risk"),
+  x_trans = "log",
+  xlim = c(0.8, 1.2),
+  ticks_at = c(0.8, 0.9, 1.0, 1.1, 1.2),
+  theme = tm
+)
+
+# DISPLAY THE PLOT
+plot(p2, vp = viewport(width = unit(8, "inches"), 
+                     height = unit(2.5, "inches")))
+
+# To save:
+pdf("./Forest/pd_snps_forest_plot.pdf", width = 8, height = 2.5)
+plot(p2)
+dev.off()
+
+```
+
+# Session information
+
+```{r, session-information}
+sessionInfo()
+```
+

@@ -1,0 +1,512 @@
+---
+title: "Metabolomics"
+author: Alexis Felipe Rojas Cruz
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cerulean  
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.keep = 'all'
+)
+```
+
+
+```{r include=FALSE, comment = ""}
+# Define packages and their sources
+
+cran_packages <- c("tidyverse", "ggplot2", "ggrepel", "readr", "ggvenn", "UpSetR")
+
+# Install CRAN packages
+missing_cran <- cran_packages[!cran_packages %in% rownames(installed.packages())]
+if (length(missing_cran) > 0) {
+  install.packages(missing_cran)
+}
+
+# Load all libraries
+library(tidyverse)
+library(readr)
+library(ggvenn)
+library(UpSetR)
+
+```
+
+# Alignment filtering
+
+# Load data
+
+
+```{r }
+# Detect the header row
+lines <- readLines("../GC-MS/Alignment_results/Area_peak.txt")
+header_line <- grep("^Alignment ID", lines)
+
+# Load the table from the header onward
+data_raw <- read.table("../GC-MS/Alignment_results/Area_peak.txt",
+                 sep = "\t",
+                 header = TRUE,
+                 skip = header_line - 1,
+                 fill = TRUE,
+                 quote = "",
+                 check.names = FALSE)
+```
+
+# Find files
+
+```{r find_files}
+
+# data cleaning
+data_clean <- data_raw %>%
+  select(`Metabolite name`, starts_with("CT"), starts_with("PD"), starts_with("QC")) %>%
+  mutate(`Metabolite name` = str_remove(`Metabolite name`, "^no MS2:\\s*")) %>%
+  filter(!str_starts(`Metabolite name`, "Unknown")) %>%
+  rename(Sample = `Metabolite name`) %>%
+  mutate(Sample = make.unique(Sample, sep = "_"))
+
+```
+
+# RSD filtering
+
+```{r rsd filtering}
+
+# Define RSD function
+rsd <- function(x) {
+  (sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)) * 100
+}
+
+# Apply RSD calculation with dplyr
+data_filtered <- data_clean %>%
+  rowwise() %>%   # allows row-wise ops
+  mutate(RSD = rsd(c_across(starts_with("QC")))) %>%   # compute RSD using QC columns
+  ungroup() %>%
+  filter(RSD < 80) %>%
+  select(-RSD, -starts_with("QC"))
+```
+
+```{r rsd filtering}
+
+label_row <- c("Label",
+               rep("Healthy", sum(startsWith(names(data_filtered), "CT"))),
+               rep("PD",      sum(startsWith(names(data_filtered), "PD"))))
+
+data_final <- rbind(label_row, data_filtered)
+
+```
+
+```{r}
+
+write.csv(data_final, file = "../GC-MS/Alignment_results/GC-MS_filtered.csv",
+  row.names = FALSE, quote = TRUE)
+```
+
+# Venn diagram
+
+## LC-MS (Positive)
+
+```{r load-ancom_results}
+
+# Load metabolites
+
+ANOVA <- read.csv("../LC-MS/Positive/Results/volcano.csv") %>%
+  rename(Metabolite = X)
+sPLS.DA <- read.csv("../LC-MS/Positive/Results/splsda_loadings.csv") %>%
+  rename(Metabolite = X) %>%
+  filter(comp.1 != 0)
+RF <- read.csv("../LC-MS/Positive/Results/randomforests_sigfeatures.csv") %>%
+  rename(Metabolite = X) %>%
+  arrange(desc(MeanDecreaseAccuracy)) %>%
+  slice_head(prop = 0.05)
+norm_data <- read.csv("../LC-MS/Positive/Results/data_normalized.csv") %>%
+  rename(Metabolite = X)
+
+cat("ANOVA metabolites:", nrow(ANOVA), "\n")
+cat("sPLS-DA metabolites:", nrow(sPLS.DA), "\n")
+cat("Random Forest (top 5%):", nrow(RF), "\n")
+cat("Normalized data metabolites:", nrow(norm_data), "\n")
+```
+
+
+## Overlap
+
+```{r venn-diagram}
+
+# Combine taxa into a list for Venn plotting
+meta_list <- list(
+  ANOVA = ANOVA$Metabolite,
+  sPLS.DA = sPLS.DA$Metabolite,
+  RF = RF$Metabolite
+)
+
+
+# Plot
+meta_venn <- ggvenn(
+  meta_list,
+  fill_color = c("#4C9F70", "#6A4C37", "#B8B88D"),
+  fill_alpha = 0.4,
+  stroke_color = c("#4C9F70", "#6A4C37", "#B8B88D"),
+  stroke_size = 1,
+  stroke_linetype = "solid",
+  stroke_alpha = 1,
+  set_name_size = 6,
+  set_name_color = c("#4C9F70", "#6A4C37", "#B8B88D"),
+  text_size = 8,
+  text_color = "black",
+  show_percentage = FALSE
+) +
+  theme_void()
+
+print(meta_venn)
+
+# Save PDF
+ggsave("../LC-MS/Positive/Venn.pdf",
+       meta_venn, width = 8, height = 8, dpi = 300)
+
+```
+
+
+# Data Merging
+
+```{r merging_ancom-results}
+# Merging
+
+LC.MS_positive <- ANOVA %>%
+  inner_join(sPLS.DA, by = "Metabolite") %>%
+  inner_join(RF, by = "Metabolite") %>%
+  inner_join(norm_data, by = "Metabolite") %>%
+  arrange(log2.FC.) %>%
+   mutate(
+    Group = case_when(
+      log2.FC. < 0 & comp.1 < 0 ~ "Healthy",
+      log2.FC. > 0 & comp.1 > 0 ~ "PD",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  relocate(Group, .after = "MeanDecreaseAccuracy")
+
+# Save
+
+write.csv(
+  LC.MS_positive,
+  "../LC-MS/Positive/Merged_Metabolites.csv",
+  row.names = FALSE
+)
+
+```
+
+## LC-MS (Negative)
+
+```{r load-ancom_results}
+
+# Load metabolites
+
+ANOVA <- read.csv("../LC-MS/Negative/Results/volcano.csv") %>%
+  rename(Metabolite = X, p.ajusted = raw.pval)
+sPLS.DA <- read.csv("../LC-MS/Negative/Results/splsda_loadings.csv") %>%
+  rename(Metabolite = X) %>%
+  filter(comp.1 != 0)
+RF <- read.csv("../LC-MS/Negative/Results/randomforests_sigfeatures.csv") %>%
+  rename(Metabolite = X) %>%
+  arrange(desc(MeanDecreaseAccuracy)) %>%
+  slice_head(prop = 0.1) 
+norm_data <- read.csv("../LC-MS/Negative/Results/data_normalized2.csv") %>%
+  rename(Metabolite = X)
+
+cat("ANOVA metabolites:", nrow(ANOVA), "\n")
+cat("sPLS-DA metabolites:", nrow(sPLS.DA), "\n")
+cat("Random Forest (top 5%):", nrow(RF), "\n")
+cat("Normalized data metabolites:", nrow(norm_data), "\n")
+
+```
+
+
+## Overlap
+
+```{r venn-diagram}
+
+# Combine taxa into a list for Venn plotting
+meta_list <- list(
+  ANOVA = ANOVA$Metabolite,
+  sPLS.DA = sPLS.DA$Metabolite,
+  RF = RF$Metabolite
+)
+
+
+# Plot
+meta_venn <- ggvenn(
+  meta_list,
+  fill_color = c("#4C9F70", "#6A4C37", "#B8B88D"),
+  fill_alpha = 0.4,
+  stroke_color = c("#4C9F70", "#6A4C37", "#B8B88D"),
+  stroke_size = 1,
+  stroke_linetype = "solid",
+  stroke_alpha = 1,
+  set_name_size = 6,
+  set_name_color = c("#4C9F70", "#6A4C37", "#B8B88D"),
+  text_size = 8,
+  text_color = "black",
+  show_percentage = FALSE
+) +
+  theme_void()
+
+print(meta_venn)
+
+# Save PDF
+ggsave("../LC-MS/Negative/Venn.pdf",
+       meta_venn, width = 8, height = 8, dpi = 300)
+
+```
+
+
+# Data Merging
+
+```{r merging_ancom-results}
+# Merging
+
+LC.MS_negative <- ANOVA %>%
+  inner_join(sPLS.DA, by = "Metabolite") %>%
+  inner_join(RF, by = "Metabolite") %>%
+  inner_join(norm_data, by = "Metabolite") %>%
+  arrange(log2.FC.) %>%
+   mutate(
+    Group = case_when(
+      log2.FC. < 0 & comp.1 > 0 ~ "Healthy",
+      log2.FC. > 0 & comp.1 < 0 ~ "PD",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  relocate(Group, .after = "MeanDecreaseAccuracy")
+
+# Save
+
+write.csv(
+  LC.MS_negative,
+  "../LC-MS/Negative/Merged_Metabolites.csv",
+  row.names = FALSE
+)
+
+```
+
+## GC-MS
+
+```{r load-ancom_results}
+
+# Load metabolites
+
+ANOVA <- read.csv("../GC-MS/Results/volcano.csv") %>%
+  rename(Metabolite = X)
+sPLS.DA <- read.csv("../GC-MS/Results/splsda_loadings.csv") %>%
+  rename(Metabolite = X) %>%
+  filter(comp.1 != 0)
+RF <- read.csv("../GC-MS/Results/randomforests_sigfeatures.csv") %>%
+  rename(Metabolite = X) %>%
+  arrange(desc(MeanDecreaseAccuracy)) %>%
+  slice_head(prop = 0.1)
+norm_data <- read.csv("../GC-MS/Results/data_normalized2.csv") %>%
+  rename(Metabolite = X)
+
+cat("ANOVA metabolites:", nrow(ANOVA), "\n")
+cat("sPLS-DA metabolites:", nrow(sPLS.DA), "\n")
+cat("Random Forest (top 5%):", nrow(RF), "\n")
+cat("Normalized data metabolites:", nrow(norm_data), "\n")
+
+```
+
+
+## Overlap
+
+```{r venn-diagram}
+
+# Combine taxa into a list for Venn plotting
+meta_list <- list(
+  ANOVA = ANOVA$Metabolite,
+  sPLS.DA = sPLS.DA$Metabolite,
+  RF = RF$Metabolite
+)
+
+
+# Plot
+meta_venn <- ggvenn(
+  meta_list,
+  fill_color = c("#4C9F70", "#6A4C37", "#B8B88D"),
+  fill_alpha = 0.4,
+  stroke_color = c("#4C9F70", "#6A4C37", "#B8B88D"),
+  stroke_size = 1,
+  stroke_linetype = "solid",
+  stroke_alpha = 1,
+  set_name_size = 6,
+  set_name_color = c("#4C9F70", "#6A4C37", "#B8B88D"),
+  text_size = 8,
+  text_color = "black",
+  show_percentage = FALSE
+) +
+  theme_void()
+
+print(meta_venn)
+
+# Save PDF
+ggsave("../GC-MS/Venn.pdf",
+       meta_venn, width = 8, height = 8, dpi = 300)
+
+```
+
+
+# Data Merging
+
+```{r merging results}
+# Merging
+
+GC.MS <- ANOVA %>%
+  inner_join(sPLS.DA, by = "Metabolite") %>%
+  inner_join(RF, by = "Metabolite") %>%
+  inner_join(norm_data, by = "Metabolite") %>%
+  arrange(log2.FC.) %>%
+   mutate(
+    Group = case_when(
+      log2.FC. < 0 & comp.1 < 0 ~ "Healthy",
+      log2.FC. > 0 & comp.1 > 0 ~ "PD",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  relocate(Group, .after = "MeanDecreaseAccuracy")
+# Save
+
+write.csv(
+  GC.MS,
+  "../GC-MS/Merged_Metabolites.csv",
+  row.names = FALSE
+)
+
+```
+
+## Final metabolites
+
+```{r merging results}
+final_metabolites <- bind_rows(
+  LC.MS_positive %>% mutate(Type = "Positive"),
+  LC.MS_negative %>% mutate(Type = "Negative"),
+  GC.MS %>% mutate(Type = "GC-MS")
+  ) %>%
+  mutate(
+    Metabolite = gsub("_[0-9]+$", "", Metabolite)
+  ) %>%
+  relocate(Type, .after = "Group")
+
+Healthy_meta <- final_metabolites %>%
+  filter(Group == "Healthy") %>%
+  select(Metabolite, starts_with("CT"), starts_with("PD"))
+
+PD_meta <- final_metabolites %>%
+  filter(Group == "PD") %>%
+  select(Metabolite, starts_with("CT"), starts_with("PD"))
+
+# Save
+write.csv(final_metabolites, "Final_metabolites.csv", row.names = FALSE, quote = TRUE)
+write.csv(Healthy_meta, "Healthy_metabolites.csv", row.names = FALSE, quote = TRUE)
+write.csv(PD_meta, "PD_metabolites.csv", row.names = FALSE, quote = TRUE)
+```
+
+# Build UpSet input: metabolite × platform matrix
+
+```{r upset-data}
+
+met_platform <- final_metabolites %>%
+  mutate(
+    Metabolite = make.unique(Metabolite, sep = "_")
+  ) %>%
+  mutate(present = 1) %>%
+  pivot_wider(
+    names_from = Type,
+    values_from = present,
+    values_fill = 0
+  ) %>%
+  as.data.frame()
+
+# Use metabolite names as rownames
+rownames(met_platform) <- met_platform$Metabolite
+met_platform$Metabolite <- NULL
+
+```
+
+```{r upset-plot}
+
+## Define platforms (sets)
+
+set_vars <- c("Positive", "Negative", "GC-MS")
+
+## Plot settings
+
+mb_ratio1 <- c(0.65, 0.35)
+text_scale_options3 <- c(
+  2.5,  # numbers on top of bars (intersection size)
+  1.8,  # set names
+  1.6,  # set sizes
+  1.4,  # axis titles
+  2.2,  # main bar title
+  1.8   # matrix labels
+)
+
+# setting colors
+main_bar_col <- c("violetred4")
+sets_bar_col <- c("turquoise4")
+matrix_col   <- c("slateblue4")
+shade_col    <- c("wheat4")
+
+# UpSet plot
+
+upset(
+  met_platform,
+  sets = set_vars,
+  mb.ratio = mb_ratio1,
+  mainbar.y.label = "Number of metabolites",
+  sets.x.label = "Detected per platform",
+  order.by = "freq",
+  show.numbers = "yes",
+  point.size = 4,
+  line.size = 1,
+  text.scale = text_scale_options3,
+  main.bar.color = main_bar_col,
+  sets.bar.color = sets_bar_col,
+  matrix.color = matrix_col,
+  shade.color = shade_col
+)
+
+```
+
+```{r upset-save}
+pdf("UpSet_metabolites.pdf", width = 9, height = 7)
+
+upset(
+  met_platform,
+  sets = set_vars,
+  mb.ratio = mb_ratio1,
+  mainbar.y.label = "Number of metabolites",
+  sets.x.label = "Detected per platform",
+  order.by = "freq",
+  show.numbers = "yes",
+  point.size = 4,
+  line.size = 1,
+  text.scale = text_scale_options3,
+  main.bar.color = main_bar_col,
+  sets.bar.color = sets_bar_col,
+  matrix.color = matrix_col,
+  shade.color = shade_col
+)
+
+dev.off()
+
+```
+## Session info
+
+```{r session_information}
+Sys.time()
+getwd()
+  
+sessionInfo()
+```

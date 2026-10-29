@@ -1,0 +1,1737 @@
+---
+title: "Metagenomics and Metabolomics Integration"
+author: "Alexis Felipe Rojas Cruz"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cerulean  
+    highlight: tango
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.keep = 'all'
+)
+```
+
+# 1. Install and Load Required Packages
+
+```{r include=FALSE, comment = ""}
+# Define packages and their sources
+bioc_packages <- c("ComplexHeatmap", "clusterProfiler", "DOSE", "enrichplot", "AnnotationDbi", "GO.db", "KEGGREST")
+cran_packages <- c("RColorBrewer", "tidyverse", "ggplot2", "ggrepel", "pheatmap", "readr", "ggvenn", "circlize", "networkD3", "webshot2", "htmlwidgets", "patchwork", "unikn", "yarrr", "scales", "ggsci")
+
+# Install Bioconductor packages
+missing_bioc <- bioc_packages[!bioc_packages %in% rownames(installed.packages())]
+if (length(missing_bioc) > 0) {
+  if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+  }
+  BiocManager::install(missing_bioc)
+}
+
+# Install CRAN packages
+missing_cran <- cran_packages[!cran_packages %in% rownames(installed.packages())]
+if (length(missing_cran) > 0) {
+  install.packages(missing_cran)
+}
+
+# Load all libraries
+library(ComplexHeatmap)
+library(clusterProfiler)
+library(DOSE)
+library(enrichplot)
+library(AnnotationDbi)
+library(KEGGREST)
+library(tidyverse)
+library(pheatmap)
+library(ggrepel)
+library(RColorBrewer)
+library(readr)
+library(ggvenn)
+library(circlize)
+library(networkD3)
+library(webshot2)
+library(htmlwidgets)
+library(patchwork)
+library(dplyr)
+library(unikn)
+```
+
+## - Loading palettes
+
+In this section, we load additional color palettes and define some custom ones.
+
+```{r message=FALSE, warning=FALSE}
+# Load additional colour palette packages
+library(unikn, quietly = TRUE)
+library(RColorBrewer, quietly = TRUE)
+library(yarrr, quietly = TRUE)
+library(scales, quietly = TRUE)
+library(ggsci, quietly = TRUE)
+
+# Define a set of custom color palettes from the unikn package
+mix_1 <- usecol(pal = c(Karpfenblau, "white", Peach), n = 15)
+mix_2 <- usecol(pal = c(rev(pal_seeblau), "white", pal_pinky))
+mix_3 <- usecol(pal = c(rev(pal_bordeaux), "white", pal_petrol), n = 15)
+
+# Display the custom palettes
+seecol(list(mix_1, mix_2, mix_3), col_brd = "white", lwd_brd = 4, title = "Comparing palettes mixed from unikn colors", pal_names = c("mix_1", "mix_2", "mix_3"))
+
+# Define a second set of custom palettes from the RColorBrewer and yarrr packages
+brew_mix <- usecol(c(rev(brewer.pal(n = 4, name = "Reds")), "white", brewer.pal(n = 4, name = "Blues")), n = 13)
+brew_ext <- usecol(brewer.pal(n = 11, name = "Spectral"), n = 12)
+yarrr_mix <- usecol(c(piratepal("nemo"), piratepal("bugs")))
+yarrr_mod <- usecol(c(piratepal("ipod")), n = 9)
+
+# Display the second set of custom palettes
+seecol(pal = list(brew_mix, brew_ext, yarrr_mix, yarrr_mod), col_brd = "white", lwd_brd = 2, title = "Using usecol() and seecol() to mix and modify palettes", pal_names = c("brew_mix", "brew_ext", "yarrr_mix", "yarrr_mod"))
+
+# Define additional custom palettes from the scales package
+natjournals_palette <- pal_npg("nrc")(10)
+```
+
+## Loading data
+
+
+```{r load-data}
+# EUR CLR matrix
+EUR_clr <- readRDS("./Data/EUR_clr_counts.rds")
+
+# Metabolites (log10 transformed)
+metabolites_raw <- read.csv("./Data/Differential_metabolites.csv",
+                              header = TRUE,
+                              row.names =1,
+                              sep = ";",
+                              check.names = FALSE)
+
+# MAG based on genus
+MAG_genus <- read.csv("./Data/MAGs_genus.csv",
+                              header = TRUE,
+                              check.names = FALSE)
+
+```
+
+## Preparing data
+
+```{r prepare-data}
+# Filter EUR_clr
+EUR_clr_filt <- EUR_clr[rownames(EUR_clr) %in% MAG_genus$taxon, ] %>%
+  rename_with(~ sub("^E\\.", "", .x), starts_with("E.")) %>%
+  as.matrix()
+
+# Set up metabolites
+metabolites <- metabolites_raw %>%
+  as.data.frame() %>%
+  dplyr::select(dplyr::matches("^(CT_|PD_)")) %>%
+  as.matrix()
+
+# Identify common sample columns
+common_samples <- intersect(
+  colnames(EUR_clr_filt),
+  colnames(metabolites)
+)
+
+# Reorder both matrices
+EUR_clr_filt <- EUR_clr_filt[, common_samples, drop = FALSE]
+metabolites <- metabolites[, common_samples, drop = FALSE]
+
+identical(
+  colnames(EUR_clr_filt),
+  colnames(metabolites)
+)
+
+cat("EUR_clr dimensions:", dim(EUR_clr_filt), "\n")
+cat("Metabolites dimensions:", dim(metabolites), "\n")
+cat("Number of samples:", length(common_samples), "\n")
+
+```
+## Define group vector
+
+```{r group vector}
+group_vec <- ifelse(
+  grepl("^PD_", colnames(EUR_clr_filt)), "PD",
+  ifelse(grepl("^CT_", colnames(EUR_clr_filt)), "Healthy", NA)
+)
+
+names(group_vec) <- colnames(EUR_clr_filt)
+
+group_vec <- factor(group_vec, levels = c("PD", "Healthy"))
+
+PD_samples <- names(group_vec)[group_vec == "PD"]
+H_samples  <- names(group_vec)[group_vec == "Healthy"]
+
+# check
+all(PD_samples %in% colnames(EUR_clr_filt))
+all(H_samples  %in% colnames(EUR_clr_filt))
+
+```
+
+
+# 1. ASV–Metabolite Spearman correlations
+
+```{r Spearman and Permutation functions}
+# =====================================================
+# Safe Spearman correlation
+# =====================================================
+safe_spearman <- function(x, y, min_n = 3) {
+
+  # Require sufficient observations and variability
+  if (length(x) < min_n ||
+      diff(range(x)) == 0 ||
+      diff(range(y)) == 0) {
+    return(NA_real_)
+  }
+
+  suppressWarnings(
+    cor(
+      x,
+      y,
+      method = "spearman",
+      use = "complete.obs"
+    )
+  )
+}
+
+
+# =====================================================
+# Spearman correlation function
+# =====================================================
+S_correlation <- function(x, y, min_n = 3) {
+
+  # Keep only complete observations
+  ok <- complete.cases(x, y)
+
+  x <- x[ok]
+  y <- y[ok]
+
+  # Compute Spearman correlation
+  rho <- safe_spearman(
+    x,
+    y,
+    min_n
+  )
+
+  # Return NA if correlation cannot be estimated
+  if (is.na(rho)) {
+    return(c(
+      r = NA_real_,
+      p = NA_real_,
+      n = length(x)
+    ))
+  }
+
+  # Compute p-value
+  test <- suppressWarnings(
+    cor.test(
+      x,
+      y,
+      method = "spearman",
+      exact = FALSE
+    )
+  )
+
+  c(
+    r = rho,
+    p = test$p.value,
+    n = length(x)
+  )
+}
+
+
+# =====================================================
+# Permutation test for differential correlation (Δρ)
+# Δρ = rho_PD - rho_Healthy
+# =====================================================
+perm_delta_rho <- function(
+    x,
+    y,
+    group,
+    n_perm = 5000,
+    min_n = 3,
+    seed = NULL
+) {
+
+  # Set random seed for reproducibility
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
+
+  # Remove observations with missing values
+  ok <- complete.cases(x, y, group)
+
+  x <- x[ok]
+  y <- y[ok]
+  g <- factor(group[ok])
+
+  # Require exactly PD and Healthy groups
+  if (!identical(
+        sort(levels(droplevels(g))),
+        c("Healthy", "PD")
+      )) {
+    return(c(
+      delta_rho = NA_real_,
+      p_perm = NA_real_
+    ))
+  }
+
+  # Group sizes
+  n_PD <- sum(g == "PD")
+  n_H  <- sum(g == "Healthy")
+
+  # Require sufficient observations per group
+  if (n_PD < min_n || n_H < min_n) {
+    return(c(
+      delta_rho = NA_real_,
+      p_perm = NA_real_,
+      n_PD = n_PD,
+      n_H = n_H,
+      n_eff = min(n_PD, n_H)
+    ))
+  }
+
+  # Observed correlations
+  rho_PD <- safe_spearman(
+    x[g == "PD"],
+    y[g == "PD"],
+    min_n
+  )
+
+  rho_H <- safe_spearman(
+    x[g == "Healthy"],
+    y[g == "Healthy"],
+    min_n
+  )
+
+  # Stop if one correlation cannot be estimated
+  if (is.na(rho_PD) || is.na(rho_H)) {
+    return(c(
+      delta_rho = NA_real_,
+      p_perm = NA_real_,
+      rho_PD = rho_PD,
+      rho_H = rho_H,
+      n_PD = n_PD,
+      n_H = n_H,
+      n_eff = min(n_PD, n_H)
+    ))
+  }
+
+  # Observed differential correlation
+  obs_delta <- rho_PD - rho_H
+
+  # Initialize permutation vector
+  n_total <- length(g)
+  perm_deltas <- rep(NA_real_, n_perm)
+
+  # Permute group labels while preserving group sizes
+  for (i in seq_len(n_perm)) {
+
+    perm <- sample.int(n_total)
+
+    idx_PD <- perm[seq_len(n_PD)]
+    idx_H  <- perm[(n_PD + 1):n_total]
+
+    rho_PD_perm <- safe_spearman(
+      x[idx_PD],
+      y[idx_PD],
+      min_n
+    )
+
+    rho_H_perm <- safe_spearman(
+      x[idx_H],
+      y[idx_H],
+      min_n
+    )
+
+    if (!is.na(rho_PD_perm) &&
+        !is.na(rho_H_perm)) {
+      perm_deltas[i] <- rho_PD_perm - rho_H_perm
+    }
+  }
+
+  # Permutation quality control
+  valid <- !is.na(perm_deltas)
+  n_valid <- sum(valid)
+
+  if (n_valid < 0.90 * n_perm) {
+    warning(
+      sprintf(
+        "Only %d/%d permutations were valid.",
+        n_valid,
+        n_perm
+      )
+    )
+  }
+
+  # Return NA if no valid permutations
+  if (n_valid == 0) {
+    return(c(
+      delta_rho = obs_delta,
+      p_perm = NA_real_,
+      rho_PD = rho_PD,
+      rho_H = rho_H,
+      n_PD = n_PD,
+      n_H = n_H,
+      n_eff = min(n_PD, n_H),
+      n_perm_valid = 0
+    ))
+  }
+
+  # Empirical two-sided permutation p-value
+  p_perm <-
+    (sum(
+      abs(perm_deltas[valid]) >= abs(obs_delta)
+    ) + 1) /
+    (n_valid + 1)
+
+  # Return effect size and diagnostics
+  c(
+    delta_rho = obs_delta,
+    p_perm = p_perm,
+    rho_PD = rho_PD,
+    rho_H = rho_H,
+    n_PD = n_PD,
+    n_H = n_H,
+    n_eff = min(n_PD, n_H),
+    n_perm_valid = n_valid
+  )
+}
+
+```
+
+## ASV–Metabolite correlations
+
+```{r ASV-Metabolite correlations}
+
+# =====================================================
+# ASV–metabolite correlations
+# =====================================================
+ASV_meta_cor <- expand_grid(
+  ASV        = rownames(EUR_clr_filt),
+  Metabolite = rownames(metabolites)
+) %>%
+  mutate(
+
+    # PD-only correlations
+    PD_stats = map2(
+      ASV,
+      Metabolite,
+      ~ S_correlation(
+          EUR_clr_filt[.x, PD_samples, drop = TRUE],
+          metabolites[.y, PD_samples, drop = TRUE],
+          min_n = 3
+        )
+    ),
+
+    # Healthy-only correlations
+    H_stats = map2(
+      ASV,
+      Metabolite,
+      ~ S_correlation(
+          EUR_clr_filt[.x, H_samples, drop = TRUE],
+          metabolites[.y, H_samples, drop = TRUE],
+          min_n = 3
+        )
+    )
+  ) %>%
+  mutate(
+    rho_PD = map_dbl(PD_stats, "r"),
+    p_PD   = map_dbl(PD_stats, "p"),
+
+    rho_H = map_dbl(H_stats, "r"),
+    p_H   = map_dbl(H_stats, "p")
+  ) %>%
+  select(-PD_stats, -H_stats)
+
+
+# =====================================================
+# Permutation test for differential correlations
+# =====================================================
+ASV_meta_cor <- ASV_meta_cor %>%
+  mutate(
+    perm_stats = map2(
+      ASV,
+      Metabolite,
+      ~ perm_delta_rho(
+          x      = EUR_clr_filt[.x, ],
+          y      = metabolites[.y, ],
+          group  = group_vec,
+          n_perm = 5000,
+          min_n  = 3
+        )
+    ),
+
+    delta_rho = map_dbl(
+      perm_stats,
+      "delta_rho"
+    ),
+
+    p_delta = map_dbl(
+      perm_stats,
+      "p_perm"
+    ),
+
+    n_eff = map_dbl(
+      perm_stats,
+      "n_eff"
+    ),
+
+    n_perm_valid = map_dbl(
+      perm_stats,
+      "n_perm_valid"
+    )
+  ) %>%
+  select(-perm_stats)
+```
+
+## Multiple testing correction
+
+```{r testing correction}
+# =====================================================
+# Multiple testing correction
+# =====================================================
+ASV_meta_cor <- ASV_meta_cor %>%
+  mutate(
+    p_adj_PD    = p.adjust(p_PD, method = "BH"),
+    p_adj_H     = p.adjust(p_H, method = "BH"),
+    p_adj_delta = p.adjust(p_delta, method = "BH"),
+
+    significant_delta = p_adj_delta < 0.05
+  ) %>%
+  arrange(desc(abs(delta_rho))) %>%
+  mutate(
+    delta_category = case_when(
+      abs(delta_rho) >= 0.50 ~ "Large difference",
+      abs(delta_rho) >= 0.20 ~ "Moderate difference",
+      TRUE                   ~ "Small difference"
+    ),
+
+  direction_rho = case_when(
+      abs(rho_PD) > abs(rho_H) ~ "Stronger in PD",
+      abs(rho_H) > abs(rho_PD) ~ "Stronger in Healthy",
+      TRUE                     ~ "Equal Strength"
+    )
+  )
+```
+
+## Data organization 
+
+```{r data-organization}
+
+# =====================================================
+# Order rows by differential correlation magnitude
+# =====================================================
+ASV_meta_cor <- ASV_meta_cor %>%
+  arrange(desc(abs(delta_rho)))
+
+# =====================================================
+# Effect-size matrix
+# =====================================================
+heatmap_cor <- ASV_meta_cor %>%
+  transmute(
+    Pair = paste(ASV, Metabolite, sep = " | "),
+    PD = rho_PD,
+    Healthy = rho_H
+  ) %>%
+  column_to_rownames("Pair") %>%
+  as.matrix()
+
+# =====================================================
+# Adjusted p-value matrix
+# =====================================================
+heatmap_pvals <- ASV_meta_cor %>%
+  transmute(
+    Pair = paste(ASV, Metabolite, sep = " | "),
+    PD = p_adj_PD,
+    Healthy = p_adj_H
+  ) %>%
+  column_to_rownames("Pair") %>%
+  as.matrix()
+
+# =====================================================
+# Differential-correlation categories
+# =====================================================
+delta_category <- factor(
+  ASV_meta_cor$delta_category,
+  levels = c(
+    "Large difference",
+    "Moderate difference",
+    "Small difference"
+  )
+)
+```
+
+
+```{r heatmap}
+# =====================================================
+# Color palettes
+# =====================================================
+rho_lim <- max(abs(heatmap_cor), na.rm = TRUE)
+
+col_heatmap_guide <- colorRamp2(
+  seq(-rho_lim, rho_lim, length.out = 13),
+  colorRampPalette(
+    c("#4A6FA5", "white", "#B5543A")
+  )(13)
+)
+
+group_colors <- c(
+  PD = "#8B1E3F",
+  Healthy = "#355F8C"
+)
+
+delta_colors <- c(
+  "Large difference" = "#8C4A2F",
+  "Moderate difference" = "#C2A14D",
+  "Small difference" = "#4E7F5D"
+)
+
+# =====================================================
+# Annotations
+# =====================================================
+col_anno <- HeatmapAnnotation(
+  Group = c("PD", "Healthy"),
+  col = list(Group = group_colors),
+  simple_anno_size = unit(4, "mm")
+)
+
+row_anno <- rowAnnotation(
+  Category = delta_category,
+  col = list(Category = delta_colors),
+  annotation_width = unit(4, "mm"),
+  show_annotation_name = FALSE,
+  annotation_legend_param = list(
+    title = expression(Delta * rho ~ "category")
+  )
+)
+
+# =====================================================
+# Heatmap
+# =====================================================
+Heatmap_combined <- Heatmap(
+  heatmap_cor,
+  name = "rho",
+  top_annotation = col_anno,
+  left_annotation = row_anno,
+  col = col_heatmap_guide,
+
+  cell_fun = function(j, i, x, y, w, h, fill) {
+    p <- heatmap_pvals[i, j]
+
+    if (!is.na(p)) {
+      lab <- if (p < 0.01) "**" else if (p < 0.05) "*" else NULL
+      if (!is.null(lab))
+        grid.text(lab, x, y, gp = gpar(fontsize = 15))
+    }
+  },
+
+  row_split = delta_category,
+  row_title = NULL,
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  cluster_row_slices = FALSE,
+  show_row_dend = FALSE,
+  show_row_names = FALSE,
+
+  use_raster = TRUE,
+  raster_quality = 3,
+
+  border = TRUE,
+  rect_gp = gpar(col = NA),
+
+  column_names_gp = gpar(
+    fontsize = 10,
+    fontface = "bold"
+  ),
+
+  heatmap_legend_param = list(
+    title = expression(Spearman ~ rho),
+    at = round(seq(-rho_lim, rho_lim, length.out = 5), 2)
+  )
+)
+
+draw(
+  Heatmap_combined,
+  heatmap_legend_side = "right",
+  annotation_legend_side = "right",
+  merge_legends = TRUE,
+  align_annotation_legend = TRUE
+)
+
+heatmap_plot <- recordPlot()
+```
+
+```{r save}
+# =====================================================
+# Save heatmap as PDF
+# =====================================================
+# Open a new PDF device (portrait layout)
+pdf(file = "./Spearman/Heatmap.pdf", width = 10, height = 14)
+
+# Draw your heatmap object
+draw(
+  Heatmap_combined,
+  heatmap_legend_side = "right",
+  annotation_legend_side = "right",
+  merge_legends = TRUE,                 
+  align_annotation_legend = TRUE,      
+  newpage = TRUE                        
+)
+
+# Close the PDF device
+dev.off()
+
+```
+
+```{r save_cor_df}
+
+# Save the correlation table to CSV
+write.csv(
+  ASV_meta_cor,
+  file = "./Spearman/asv_metabolites.csv",  
+  row.names = FALSE
+)
+
+# Quick confirmation
+cat("Correlation table saved\n")
+```
+
+# 2. KEGG annotation: KO → Reaction → Metabolite
+
+```{r load-data}
+# Correlation data
+ASV_meta_cor <- read.csv("./Spearman/asv_metabolites.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# EggNOG annotations
+eggnog <- read.delim("./Data/Final_annotation.tsv", sep = "\t", header = TRUE)
+
+```
+
+## Clean eggnog
+
+```{r eggnog clean}
+# Keep only eggNOG genes present in the MAG_genus dataset
+
+eggnog_clean <- eggnog %>%
+  filter(
+    !is.na(KEGG_Module), KEGG_Module != "-",
+    !is.na(KEGG_Pathway), KEGG_Pathway != "-"
+  ) %>%
+  separate_rows(GOs, sep = "[,;]") %>%
+  separate_rows(KEGG_Module, sep = "[,;]") %>%
+  separate_rows(KEGG_Pathway, sep = "[,;]") %>%
+  mutate(
+    KEGG_Module = stringr::str_trim(KEGG_Module),
+    KEGG_Pathway = stringr::str_trim(KEGG_Pathway)
+  ) %>%
+  select(
+    gene_id = query,
+    MAG_ID  = MAG_gene,
+    KEGG_Module,
+    KEGG_Pathway
+  ) %>%
+  inner_join(MAG_genus %>% select(gene_id,
+                                  Group_ASV = Group), by = "gene_id") %>%
+  distinct()
+```
+
+## KEGG functions
+
+```{r kegg_functions, message=FALSE, warning=FALSE}
+
+# =====================================================
+# 1. KO → Reaction
+# =====================================================
+get_ko_reactions <- function(ko_vec) {
+
+  ko_vec %>%
+    unique() %>%
+    na.omit() %>%
+    map_dfr(function(ko_raw) {
+
+      ko_id <- sub("^ko:", "", ko_raw)
+
+      rxn <- tryCatch(
+        keggLink("reaction", paste0("ko:", ko_id)),
+        error = function(e) NULL
+      )
+
+      if (is.null(rxn) || length(rxn) == 0) {
+        tibble(
+          KEGG_ko = paste0("ko:", ko_id),
+          Reaction = NA_character_
+        )
+      } else {
+        tibble(
+          KEGG_ko = paste0("ko:", ko_id),
+          Reaction = sub("rn:", "", rxn)
+        )
+      }
+    })
+}
+
+ko_rxn <- get_ko_reactions(eggnog_clean$KEGG_ko)
+
+# =====================================================
+# 2. Reaction → Equation
+# =====================================================
+get_reaction_equations <- function(ko_rxn_table) {
+
+  ko_rxn_table %>%
+    select(Reaction) %>%
+    distinct() %>%
+    pull(Reaction) %>%
+    na.omit() %>%
+    map_dfr(function(rxn_raw) {
+
+      rxn_id <- sub("^rn:", "", rxn_raw)
+
+      info <- tryCatch(
+        keggGet(paste0("rn:", rxn_id))[[1]],
+        error = function(e) NULL
+      )
+
+      if (is.null(info) || is.null(info$EQUATION)) {
+        tibble(
+          Reaction = rxn_id,
+          Equation = NA_character_
+        )
+      } else {
+        tibble(
+          Reaction = rxn_id,
+          Equation = info$EQUATION
+        )
+      }
+    })
+}
+
+rxn_eq <- get_reaction_equations(ko_rxn)
+
+# =====================================================
+# 3. Reaction → Substrates / Products
+# =====================================================
+parse_reaction_compounds <- function(rxn_eq_table) {
+
+  rxn_eq_table %>%
+    filter(!is.na(Equation)) %>%
+    select(Reaction, Equation) %>%
+    pmap_dfr(function(Reaction, Equation) {
+
+      sides <- strsplit(Equation, "\\s*<?=>\\s*")[[1]]
+      if (length(sides) != 2) return(NULL)
+
+      Substrates <- stringr::str_extract_all(sides[1], "[A-Z]\\d{5}")[[1]]
+      Products   <- stringr::str_extract_all(sides[2], "[A-Z]\\d{5}")[[1]]
+
+      bind_rows(
+        tibble(
+          Reaction = Reaction,
+          Compound = Substrates,
+          Role = "Substrate"
+        ),
+        tibble(
+          Reaction = Reaction,
+          Compound = Products,
+          Role = "Product"
+        )
+      )
+    }) %>%
+    filter(!is.na(Compound)) %>%
+    distinct()
+}
+
+
+rxn_compounds <- parse_reaction_compounds(rxn_eq)
+
+
+# =====================================================
+# 4. Compound → Compound Name
+# =====================================================
+get_compound_names <- function(rxn_compounds_table) {
+
+  rxn_compounds_table %>%
+    select(Compound) %>%
+    distinct() %>%
+    pull(Compound) %>%
+    na.omit() %>%
+    map_dfr(function(cid_raw) {
+
+      cid <- sub("^cpd:", "", cid_raw)
+
+      info <- tryCatch(
+        keggGet(paste0("cpd:", cid))[[1]],
+        error = function(e) NULL
+      )
+
+      if (is.null(info) || is.null(info$NAME)) {
+        tibble(
+          Compound = cid,
+          KEGG_Metabolite = NA_character_
+        )
+      } else {
+        tibble(
+          Compound = cid,
+          KEGG_Metabolite = info$NAME[1]
+        )
+      }
+    })
+}
+
+compound_names <- get_compound_names(rxn_compounds)
+
+
+# =====================================================
+# 5. Pathway → Description (annotation only)
+# =====================================================
+get_pathway_descriptions <- function(pathway_vec) {
+
+  pathway_vec %>%
+    unique() %>%
+    na.omit() %>%
+    map_dfr(function(pid_raw) {
+
+      pid <- sub("^path:", "", pid_raw)
+
+      info <- tryCatch(
+        keggGet(pid)[[1]],
+        error = function(e) NULL
+      )
+
+      if (is.null(info) || is.null(info$NAME)) {
+        tibble(
+          KEGG_Pathway = pid,
+          Pathway_description = NA_character_
+        )
+      } else {
+        tibble(
+          KEGG_Pathway = pid,
+          Pathway_description = paste(info$NAME, collapse = "; ")
+        )
+      }
+    })
+}
+
+pathway_desc <- get_pathway_descriptions(eggnog_clean$KEGG_Pathway)
+
+
+```
+
+## KEGG annotations
+
+```{r kegg_annotations, message=FALSE, warning=FALSE}
+
+# Integration
+kegg_table <- eggnog_clean %>%
+  left_join(ko_rxn, by = "KEGG_ko") %>%
+  left_join(rxn_compounds, by = "Reaction") %>%
+  left_join(compound_names, by = "Compound") %>%
+  left_join(pathway_desc, by = "KEGG_Pathway") %>%
+  mutate(
+    KEGG_Metabolite = KEGG_Metabolite %>%
+      stringr::str_trim() %>%
+      stringr::str_remove(";+$")
+  )
+
+kegg_table <- eggnog_clean %>%
+  left_join(pathway_desc, by = "KEGG_Pathway")
+```
+
+## Filtering data based on AVS
+
+```{r KEGG_taxa assignments}
+
+# =====================================================
+# 1. Pre-build the Valid Interaction Dictionary
+# =====================================================
+# Extract unique ASV groups to avoid duplicates
+asv_groups <- MAG_genus %>%
+  select(taxon, Group_ASV = Group) %>%
+  distinct()
+
+# Extract Metabolite groups
+meta_groups <- metabolites_raw %>%
+  rownames_to_column("Metabolite") %>%
+  select(Metabolite, Group_Meta = Group)
+
+# Filter correlations BEFORE touching the large KEGG data
+valid_interactions <- ASV_meta_cor %>%
+  # 1. Filter for statistical significance right away
+  filter(
+    p_delta < 0.05,
+    abs(delta_rho) >= 0.20
+  ) %>%
+  # 2. Add groups to the reduced subset
+  left_join(asv_groups, by = c("ASV" = "taxon")) %>%
+  left_join(meta_groups, by = "Metabolite") %>%
+  # 3. Apply Agreement logic 
+  # (Note: You are still using the algebraic delta_rho here. 
+  # Consider updating this to the rho_PD / rho_H logic we discussed earlier!)
+  mutate(
+    Agreement = case_when(
+      Group_ASV == "Healthy" & Group_Meta == "Healthy" & delta_rho < 0 ~ "Healthy-consistent",
+      Group_ASV == "PD"      & Group_Meta == "PD"      & delta_rho > 0 ~ "PD-consistent",
+      TRUE ~ "Discordant"
+    )
+  ) %>%
+  # 4. Drop discordant rows immediately
+  filter(Agreement != "Discordant") %>%
+  select(ASV, Metabolite, delta_rho, p_delta, delta_category, Group_Meta, Agreement)
+
+# =====================================================
+# 2. Join to the KEGG Annotation Table
+# =====================================================
+
+# Fixed typo in variable name: AVS_filtered -> ASV_filtered
+ASV_filtered <- kegg_table %>%
+  # Add MAG info
+  inner_join(
+    MAG_genus %>% select(gene_id, taxon, ends_with(".MAG"), -classification.MAG),
+    by = "gene_id"
+  ) %>%
+  # Join ONLY the highly filtered interactions
+  inner_join(
+    valid_interactions,
+    by = c("taxon" = "ASV"),
+    relationship = "many-to-many"
+  ) %>%
+  distinct()
+
+```
+
+## PD
+
+```{r sankey-PD}
+sankey_PD <- ASV_filtered %>%
+  filter(Agreement == "PD-consistent") %>%
+  filter(!is.na(Pathway_description)) %>%
+  separate(MAG_ID,
+           into = c("Prefix", "MAG", "Gene"),
+           sep = "__",
+           remove = TRUE) %>%
+  mutate(MAG = gsub("^[a-z]__", "", MAG)) %>%
+  select(MAG, Gene, KEGG_Module, Pathway_description, Metabolite) %>%
+  distinct()
+
+# Save to CSV
+write.csv(
+  sankey_PD,
+  file = "./Sankey/PD_sankey_table.csv",
+  row.names = FALSE,
+  quote = FALSE
+)
+
+```
+
+
+```{r sankey-links}
+# Define functional hierarchy
+func_levels <- c(
+  "MAG",
+  "Gene",
+  "KEGG_Module",
+  "Pathway_description",
+  "Metabolite"
+)
+
+# Build functional connections
+Sankey_links <- sankey_PD %>%
+  select(
+    MAG,
+    Gene,
+    KEGG_Module,
+    Pathway_description,
+    Metabolite
+  ) %>%
+  distinct() %>%
+  mutate(row_id = row_number()) %>%
+  pivot_longer(
+    cols = all_of(func_levels), 
+    names_to = "level",
+    values_to = "node"
+  ) %>%
+  mutate(level = factor(level, levels = func_levels)) %>%
+  arrange(row_id, level) %>%
+  group_by(row_id) %>%
+  mutate(
+    next_node = lead(node),
+    MAG_link = first(node[level == "MAG"])
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(next_node)) %>%
+  count(MAG_link, node, next_node, name = "value") %>%
+  rename(
+    source = node,
+    target = next_node,
+    MAG = MAG_link
+  )
+
+
+```
+
+```{r sankey-nodes}
+# Build nodes
+Sankey_nodes <- data.frame(
+  name = unique(c(Sankey_links$source, Sankey_links$target)),
+  stringsAsFactors = FALSE
+)
+
+# Assign node groups by hierarchy level
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(Level = case_when(
+    name %in% sankey_PD$MAG ~ "MAG",
+    name %in% sankey_PD$Gene ~ "Gene",
+    name %in% sankey_PD$KEGG_Module ~ "KEGG_Module",
+    name %in% sankey_PD$Pathway_description ~ "KEGG_Pathway",
+    name %in% sankey_PD$Metabolite ~ "Metabolite",
+    TRUE ~ "Other"
+  ))
+
+# Arrange nodes by hierarchy order
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(Level = factor(
+    Level,
+    levels = c("MAG", "Gene", "KEGG_Module", "KEGG_Pathway", "Metabolite")
+  )) %>%
+  arrange(Level)
+
+# Add numeric IDs after arranging
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(nodeID = row_number() - 1)
+
+Sankey_links <- Sankey_links %>%
+  mutate(
+    IDsource = match(source, Sankey_nodes$name) - 1,
+    IDtarget = match(target, Sankey_nodes$name) - 1
+  )
+
+```
+
+```{r sankey-plot, echo=FALSE, message=FALSE, warning=FALSE}
+# Generate palette
+# Node levels
+level_colors <- c(
+  MAG           = pal_npg("nrc")(10)[1],
+  Gene          = pal_npg("nrc")(10)[3],
+  KEGG_Module   = pal_npg("nrc")(10)[4],
+  KEGG_Pathway  = pal_npg("nrc")(10)[2],
+  Metabolite    = pal_npg("nrc")(10)[5]
+)
+
+# MAGs for link colors
+base_palette <- c(
+  "#0072B2",  # blue
+  "#D55E00",  # vermillion/red
+  "#009E73",  # green
+  "#CC79A7",  # pink/magenta
+  "#F0E442",  # yellow
+  "#56B4E9",  # sky blue
+  "#E69F00",  # orange
+  "#000000"   # black
+)
+
+MAGs <- unique(Sankey_links$MAG)
+n_mag <- length(MAGs)
+mag_palette <- if (n_mag <= length(base_palette)) {
+  base_palette[1:n_mag]
+} else {
+  colorRampPalette(base_palette)(n_mag)
+}
+
+# Prepare JS domain/range strings for injection
+mag_domain <- paste0('"', MAGs, '"', collapse = ",")
+mag_range  <- paste0('"', mag_palette, '"', collapse = ",")
+
+level_domain <- paste0('"', names(level_colors), '"', collapse = ",")
+level_range  <- paste0('"', level_colors, '"', collapse = ",")
+```
+
+```{r sankey-plot, echo=FALSE, message=FALSE, warning=FALSE}
+
+# -----------------------------
+# 1. Create Sankey network
+# -----------------------------
+sankey_plot <- sankeyNetwork(
+  Links = Sankey_links,
+  Nodes = Sankey_nodes,
+  Source = "IDsource",
+  Target = "IDtarget",
+  Value  = "value",
+  NodeID = "name",
+  NodeGroup = "Level",
+  LinkGroup = "MAG",
+  fontSize = 14,
+  nodeWidth = 22
+)
+
+# -----------------------------
+# 2. Apply custom coloring via JS
+# -----------------------------
+sankey_plot <- htmlwidgets::onRender(
+  sankey_plot,
+  sprintf(
+    '
+    function(el, x) {
+    
+       // Force Helvetica font
+      d3.select(el)
+        .style("font-family", "Helvetica, Arial, sans-serif");
+
+      // Node color scale (by Level)
+      var levelColors = d3.scaleOrdinal()
+        .domain([%s])
+        .range([%s]);
+
+      // Link color scale (by MAG)
+      var magColors = d3.scaleOrdinal()
+        .domain([%s])
+        .range([%s]);
+
+      // Apply node colors
+      d3.select(el).selectAll(".node rect")
+        .style("fill", function(d) {
+          return levelColors(d.group);
+        });
+
+      // Apply link colors
+      d3.select(el).selectAll(".link")
+        .style("stroke", function(d) {
+          return magColors(d.group);
+        })
+        .style("stroke-opacity", 0.4);
+    }
+    ',
+    level_domain, level_range,
+    mag_domain, mag_range
+  )
+)
+
+# -----------------------------
+# 3. Display
+# -----------------------------
+sankey_plot
+
+# Save as HTML
+saveWidget(sankey_plot, "./Sankey/PD_sankey.html", selfcontained = TRUE)
+
+# Horizontal layout: width > height
+
+webshot2::webshot(
+  url = "./Sankey/PD_sankey.html",
+  file = "./Sankey/PD_sankey.pdf",
+  vwidth = 1500,
+  vheight = 900,
+  cliprect = "viewport"
+)
+```
+
+
+## Healthy
+
+```{r sankey-PD}
+sankey_Healthy <- ASV_filtered %>%
+  filter(Agreement == "Healthy-consistent") %>%
+  filter(!is.na(Pathway_description)) %>%
+  separate(MAG_ID,
+           into = c("Prefix", "MAG", "Gene"),
+           sep = "__",
+           remove = TRUE) %>%
+  mutate(MAG = gsub("^[a-z]__", "", MAG)) %>%
+  select(MAG, Gene, KEGG_Module, Pathway_description, Metabolite) %>%
+  distinct()
+
+# Save to CSV
+write.csv(
+  sankey_Healthy,
+  file = "./Sankey/Healthy_sankey_table.csv",
+  row.names = FALSE,
+  quote = FALSE
+)
+```
+
+
+```{r sankey-links}
+# Define functional hierarchy
+func_levels <- c(
+  "MAG",
+  "Gene",
+  "KEGG_Module",
+  "Pathway_description",
+  "Metabolite"
+)
+
+# Build functional connections
+Sankey_links <- sankey_Healthy %>%
+  select(
+    MAG,
+    Gene,
+    KEGG_Module,
+    Pathway_description,
+    Metabolite
+  ) %>%
+  distinct() %>%
+  mutate(row_id = row_number()) %>%
+  pivot_longer(
+    cols = all_of(func_levels), 
+    names_to = "level",
+    values_to = "node"
+  ) %>%
+  mutate(level = factor(level, levels = func_levels)) %>%
+  arrange(row_id, level) %>%
+  group_by(row_id) %>%
+  mutate(
+    next_node = lead(node),
+    MAG_link = first(node[level == "MAG"])
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(next_node)) %>%
+  count(MAG_link, node, next_node, name = "value") %>%
+  rename(
+    source = node,
+    target = next_node,
+    MAG = MAG_link
+  )
+
+
+```
+
+```{r sankey-nodes}
+# Build nodes
+Sankey_nodes <- data.frame(
+  name = unique(c(Sankey_links$source, Sankey_links$target)),
+  stringsAsFactors = FALSE
+)
+
+# Assign node groups by hierarchy level
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(Level = case_when(
+    name %in% sankey_Healthy$MAG ~ "MAG",
+    name %in% sankey_Healthy$Gene ~ "Gene",
+    name %in% sankey_Healthy$KEGG_Module ~ "KEGG_Module",
+    name %in% sankey_Healthy$Pathway_description ~ "KEGG_Pathway",
+    name %in% sankey_Healthy$Metabolite ~ "Metabolite",
+    TRUE ~ "Other"
+  ))
+
+# Arrange nodes by hierarchy order
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(Level = factor(
+    Level,
+    levels = c("MAG", "Gene", "KEGG_Module", "KEGG_Pathway", "Metabolite")
+  )) %>%
+  arrange(Level)
+
+# Add numeric IDs after arranging
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(nodeID = row_number() - 1)
+
+Sankey_links <- Sankey_links %>%
+  mutate(
+    IDsource = match(source, Sankey_nodes$name) - 1,
+    IDtarget = match(target, Sankey_nodes$name) - 1
+  )
+
+```
+
+```{r sankey-plot, echo=FALSE, message=FALSE, warning=FALSE}
+# Generate palette
+# Node levels
+level_colors <- c(
+  MAG           = pal_npg("nrc")(10)[1],
+  Gene          = pal_npg("nrc")(10)[3],
+  KEGG_Module   = pal_npg("nrc")(10)[4],
+  KEGG_Pathway  = pal_npg("nrc")(10)[2],
+  Metabolite    = pal_npg("nrc")(10)[5]
+)
+
+# MAGs for link colors
+base_palette <- c(
+  "#0072B2",  # blue
+  "#D55E00",  # vermillion/red
+  "#009E73",  # green
+  "#CC79A7",  # pink/magenta
+  "#F0E442",  # yellow
+  "#56B4E9",  # sky blue
+  "#E69F00",  # orange
+  "#000000"   # black
+)
+
+MAGs <- unique(Sankey_links$MAG)
+n_mag <- length(MAGs)
+mag_palette <- if (n_mag <= length(base_palette)) {
+  base_palette[1:n_mag]
+} else {
+  colorRampPalette(base_palette)(n_mag)
+}
+
+# Prepare JS domain/range strings for injection
+mag_domain <- paste0('"', MAGs, '"', collapse = ",")
+mag_range  <- paste0('"', mag_palette, '"', collapse = ",")
+
+level_domain <- paste0('"', names(level_colors), '"', collapse = ",")
+level_range  <- paste0('"', level_colors, '"', collapse = ",")
+```
+
+```{r sankey-plot, echo=FALSE, message=FALSE, warning=FALSE}
+
+# -----------------------------
+# 1. Create Sankey network
+# -----------------------------
+sankey_plot <- sankeyNetwork(
+  Links = Sankey_links,
+  Nodes = Sankey_nodes,
+  Source = "IDsource",
+  Target = "IDtarget",
+  Value  = "value",
+  NodeID = "name",
+  NodeGroup = "Level",
+  LinkGroup = "MAG",
+  fontSize = 14,
+  nodeWidth = 22
+)
+
+# -----------------------------
+# 2. Apply custom coloring via JS
+# -----------------------------
+sankey_plot <- htmlwidgets::onRender(
+  sankey_plot,
+  sprintf(
+    '
+    function(el, x) {
+    
+       // Force Helvetica font
+      d3.select(el)
+        .style("font-family", "Helvetica, Arial, sans-serif");
+
+      // Node color scale (by Level)
+      var levelColors = d3.scaleOrdinal()
+        .domain([%s])
+        .range([%s]);
+
+      // Link color scale (by MAG)
+      var magColors = d3.scaleOrdinal()
+        .domain([%s])
+        .range([%s]);
+
+      // Apply node colors
+      d3.select(el).selectAll(".node rect")
+        .style("fill", function(d) {
+          return levelColors(d.group);
+        });
+
+      // Apply link colors
+      d3.select(el).selectAll(".link")
+        .style("stroke", function(d) {
+          return magColors(d.group);
+        })
+        .style("stroke-opacity", 0.4);
+    }
+    ',
+    level_domain, level_range,
+    mag_domain, mag_range
+  )
+)
+
+# -----------------------------
+# 3. Display
+# -----------------------------
+sankey_plot
+
+# Save as HTML
+saveWidget(sankey_plot, "./Sankey/Healthy_sankey.html", selfcontained = TRUE)
+
+# Horizontal layout: width > height
+
+webshot2::webshot(
+  url = "./Sankey/Healthy_sankey.html",
+  file = "./Sankey/Healthy_sankey.pdf",
+  vwidth = 1500,
+  vheight = 300,
+  cliprect = "viewport"
+)
+```
+
+# 3. Enrichment Analysis
+
+## Load differential expression genes per MAG
+
+```{r DEGs}
+DEGs <- read.csv("./Data/PDvsH_results.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE) %>%
+  mutate(Group = ifelse(regulation == "Upregulated", "PD",
+                 ifelse(regulation == "Downregulated", "Healthy", NA)))
+
+```
+
+## Create TERM2GENE
+
+```{r term2gene}
+
+# GO enrichment
+term2gene_go <- eggnog %>%
+  select(query, GOs) %>%
+  filter(
+    !is.na(GOs), GOs != "-"
+  ) %>%
+  separate_rows(GOs, sep = "[,;]") %>%
+  mutate(
+    GOs = stringr::str_trim(GOs)
+  ) %>%
+  select(term = GOs, gene = query) %>%
+  distinct()
+
+# KEGG KO enrichment
+term2gene_kegg <- eggnog %>%
+  select(query, KEGG_Pathway) %>%
+  filter(
+    !is.na(KEGG_Pathway), KEGG_Pathway != "-"
+  ) %>%
+  separate_rows(KEGG_Pathway, sep = "[,;]") %>%
+  mutate(
+    KEGG_Pathway = stringr::str_trim(KEGG_Pathway)
+  ) %>%
+  filter(grepl("^ko", KEGG_Pathway)) %>%
+  select(term = KEGG_Pathway, gene = query) %>%
+  distinct()
+
+# Check the results
+cat("GO terms:", length(unique(term2gene_go$term)), "\n")
+cat("GO genes:", length(unique(term2gene_go$gene)), "\n")
+cat("KEGG terms:", length(unique(term2gene_kegg$term)), "\n")
+cat("KEGG genes:", length(unique(term2gene_kegg$gene)), "\n")
+```
+
+## Create TERM2NAME
+
+```{r term2name}
+
+
+# =====================================================
+# GO enrichment
+# =====================================================
+
+# GO → Term / Definition
+
+get_go_terms <- function(go_vec) {
+
+  go_vec %>%
+    unique() %>%
+    na.omit() %>%
+    purrr::map_dfr(function(go_id) {
+
+      tibble(
+        GOs = go_id,
+        GO_Term = tryCatch(
+          AnnotationDbi::Term(GO.db::GOTERM[[go_id]]),
+          error = function(e) NA_character_
+        ),
+        GO_Definition = tryCatch(
+          AnnotationDbi::Definition(GO.db::GOTERM[[go_id]]),
+          error = function(e) NA_character_
+        )
+      )
+    })
+}
+
+go_terms <- get_go_terms(term2gene_go$term)
+
+# term2name
+term2name_go <- go_terms %>%
+  select(term = GOs, name = GO_Term) %>%
+  filter(!is.na(name)) %>%
+  distinct()
+
+# =====================================================
+# KEGG KO enrichment
+# =====================================================
+
+# Pathway → Description
+
+get_pathway_descriptions <- function(pathway_vec) {
+
+  pathway_vec %>%
+    unique() %>%
+    na.omit() %>%
+    map_dfr(function(pid_raw) {
+
+      pid <- sub("^path:", "", pid_raw)
+
+      info <- tryCatch(
+        keggGet(pid)[[1]],
+        error = function(e) NULL
+      )
+
+      if (is.null(info) || is.null(info$NAME)) {
+        tibble(
+          KEGG_Pathway = pid,
+          Pathway_description = NA_character_
+        )
+      } else {
+        tibble(
+          KEGG_Pathway = pid,
+          Pathway_description = paste(info$NAME, collapse = "; ")
+        )
+      }
+    })
+}
+
+pathway_desc <- get_pathway_descriptions(term2gene_kegg$term)
+
+# term2name
+term2name_kegg <- pathway_desc %>%
+  select(term = KEGG_Pathway, name = Pathway_description) %>%
+  filter(!is.na(name)) %>%
+  distinct()
+
+# Check the results
+cat("GO terms:", length(unique(term2name_go$term)), "\n")
+cat("GO names:", length(unique(term2name_go$name)), "\n")
+cat("KEGG terms:", length(unique(term2name_kegg$term)), "\n")
+cat("KEGG names:", length(unique(term2name_kegg$name)), "\n")
+```
+
+# GO Terms
+
+```{r comparecluster-go}
+# Set up input
+MAG_go <- MAG_genus %>%
+  left_join(
+    eggnog %>% select(query, GOs),
+    by = c("gene_id" = "query")
+  ) %>%
+  filter(!is.na(GOs), GOs != "-") %>%
+  separate_rows(GOs, sep = "[,;]") %>%
+  mutate(GOs = stringr::str_trim(GOs)) %>%
+  inner_join(term2name_go, by = c("GOs" = "term")) %>%
+  select(
+    gene  = gene_id,
+    Group,
+    GOs,
+    name
+  ) %>%
+  distinct()
+```
+
+```{r comparecluster-go, message=FALSE, warning=FALSE}
+# Run compareCluster using Group as condition
+compareGO <- compareCluster(
+  gene ~ Group,
+  data = MAG_go,
+  fun = "enricher",
+  TERM2GENE = term2gene_go,
+  TERM2NAME = term2name_go,
+  universe = eggnog$query,
+  pAdjustMethod = "BH",
+  pvalueCutoff = 0.05,
+  qvalueCutoff = 0.05
+)
+
+go_res <- as.data.frame(compareGO)
+```
+
+## Dotplot of GO enrichment
+
+```{r comparecluster-go, message=FALSE, warning=FALSE}
+
+# Dotplot of GO enrichment per condition (PD vs Healthy) using MAG genes
+MAG_goplot <- dotplot(compareGO, x = "Group", showCategory = 5) +
+  scale_color_gradientn(
+    colours = c("#f7ca64", "#46bac2", "#371ea3"),
+    guide = guide_colorbar(reverse = TRUE)
+  ) +
+  guides(size = guide_legend(override.aes = list(shape = 16))) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.y = element_text(size = 12, color = "black"),
+    axis.text.x = element_text(size = 14, angle = 45, hjust = 1, color = "black"),
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 10),
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5)
+  ) +
+  xlab(NULL) +
+  ylab(NULL)
+
+MAG_goplot
+
+# Save 
+ggsave("./Enrichment/MAG_go.pdf", plot = MAG_goplot, dpi = 600, width = 8, height = 4)
+write.csv(go_res, "./Enrichment/MAG_go_results.csv", row.names = FALSE)
+
+```
+
+# KEGG
+
+```{r comparecluster-kegg}
+# Set up input
+MAG_kegg <- MAG_genus %>%
+  left_join(
+    eggnog %>% select(query, KEGG_Pathway),
+    by = c("gene_id" = "query")
+  ) %>%
+  filter(!is.na(KEGG_Pathway), KEGG_Pathway != "-") %>%
+  separate_rows(KEGG_Pathway, sep = "[,;]") %>%
+  mutate(KEGG_Pathway = stringr::str_trim(KEGG_Pathway)) %>%
+  inner_join(term2name_kegg, by = c("KEGG_Pathway" = "term")) %>%
+  filter(grepl("^ko", KEGG_Pathway)) %>%
+  select(
+    gene  = gene_id,
+    Group,
+    KEGG_Pathway,
+    name
+  ) %>%
+  distinct()
+```
+
+```{r comparecluster-kegg, message=FALSE, warning=FALSE}
+
+# KEGG functional enrichment across MAG Groups
+compareKEGG <- compareCluster(
+  gene ~ Group,
+  data = MAG_kegg,
+  fun = "enricher",
+  TERM2GENE = term2gene_kegg,
+  TERM2NAME = term2name_kegg,
+  universe = eggnog$query,
+  pAdjustMethod = "BH",
+  pvalueCutoff = 0.05,
+  qvalueCutoff = 0.05
+)
+
+kegg_res <- as.data.frame(compareKEGG)
+```
+
+# Dotplot of KEGG enrichment
+
+```{r comparecluster-kegg, message=FALSE, warning=FALSE}
+
+MAG_keggplot <- dotplot(compareKEGG, 
+                        x = "Group", 
+                        showCategory = 5) +
+  scale_colour_distiller(palette = "YlGnBu", direction = 1) +
+  guides(size = guide_legend(override.aes = list(shape = 16))) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.y = element_text(size = 12, color = "black"),
+    axis.text.x = element_text(size = 14, angle = 45, hjust = 1, color = "black"),
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 10),
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5)
+  ) +
+  xlab(NULL) +
+  ylab(NULL)
+
+MAG_keggplot
+
+# Save 
+ggsave("./Enrichment/MAG_kegg.pdf", plot = MAG_keggplot, dpi = 600, width = 8, height = 4)
+write.csv(kegg_res, "./Enrichment/MAG_kegg_results.csv", row.names = FALSE)
+```
+
+# Session information
+
+```{r, session-information}
+sessionInfo()
+```

@@ -1,0 +1,637 @@
+---
+title: "Metatranscriptomics and Metagenomics Integration"
+author: "Alexis Felipe Rojas Cruz"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cerulean  
+    highlight: tango
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.keep = 'all'
+)
+```
+
+# 1. Install and Load Required Packages
+
+```{r include=FALSE, comment = ""}
+# Define packages and their sources
+bioc_packages <- c("ComplexHeatmap")
+cran_packages <- c("RColorBrewer", "tidyverse", "ggplot2", "ggrepel", "pheatmap", "readr", "ggvenn", "circlize", "networkD3", "webshot2", "htmlwidgets")
+
+# Install Bioconductor packages
+missing_bioc <- bioc_packages[!bioc_packages %in% rownames(installed.packages())]
+if (length(missing_bioc) > 0) {
+  if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+  }
+  BiocManager::install(missing_bioc)
+}
+
+# Install CRAN packages
+missing_cran <- cran_packages[!cran_packages %in% rownames(installed.packages())]
+if (length(missing_cran) > 0) {
+  install.packages(missing_cran)
+}
+
+# Load all libraries
+library(ComplexHeatmap)
+library(tidyverse)
+library(pheatmap)
+library(ggrepel)
+library(RColorBrewer)
+library(readr)
+library(ggvenn)
+library(circlize)
+library(networkD3)
+library(webshot2)
+library(htmlwidgets)
+```
+
+## - Loading palettes
+
+In this section, we load additional color palettes and define some custom ones.
+
+```{r message=FALSE, warning=FALSE}
+# Load additional colour palette packages
+library(unikn, quietly = TRUE)
+library(RColorBrewer, quietly = TRUE)
+library(yarrr, quietly = TRUE)
+library(scales, quietly = TRUE)
+library(ggsci, quietly = TRUE)
+
+# Define a set of custom color palettes from the unikn package
+mix_1 <- usecol(pal = c(Karpfenblau, "white", Peach), n = 15)
+mix_2 <- usecol(pal = c(rev(pal_seeblau), "white", pal_pinky))
+mix_3 <- usecol(pal = c(rev(pal_bordeaux), "white", pal_petrol), n = 15)
+
+# Display the custom palettes
+seecol(list(mix_1, mix_2, mix_3), col_brd = "white", lwd_brd = 4, title = "Comparing palettes mixed from unikn colors", pal_names = c("mix_1", "mix_2", "mix_3"))
+
+# Define a second set of custom palettes from the RColorBrewer and yarrr packages
+brew_mix <- usecol(c(rev(brewer.pal(n = 4, name = "Reds")), "white", brewer.pal(n = 4, name = "Blues")), n = 13)
+brew_ext <- usecol(brewer.pal(n = 11, name = "Spectral"), n = 12)
+yarrr_mix <- usecol(c(piratepal("nemo"), piratepal("bugs")))
+yarrr_mod <- usecol(c(piratepal("ipod")), n = 9)
+
+# Display the second set of custom palettes
+seecol(pal = list(brew_mix, brew_ext, yarrr_mix, yarrr_mod), col_brd = "white", lwd_brd = 2, title = "Using usecol() and seecol() to mix and modify palettes", pal_names = c("brew_mix", "brew_ext", "yarrr_mix", "yarrr_mod"))
+
+# Define additional custom palettes from the scales package
+natjournals_palette <- pal_npg("nrc")(10)
+```
+
+# 1. Select genus-level matches only
+
+
+```{r load-data}
+# This file contains all significant taxa/features identified by ANCOM-BC in EUR and LATAM
+ancom <- read.csv("./Data/All_significant_features.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# This file contains differential expression results comparing PD vs Healthy.
+DEGs <- read.csv("./Data/PDvsH_results.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+# Check how many entries each dataset has
+cat("ANCOM-BC results:", nrow(ancom), "rows\n")
+cat("DESeq2 results:", nrow(DEGs), "rows\n")
+
+```
+
+
+```{r MAG-final}
+
+# Define rank order (most specific first)
+rank_order <- c("Species", "Genus", "Family", "Order", "Class", "Phylum", "Kingdom")
+
+
+MAGs_final <- DEGs %>%
+  rowwise() %>%
+  mutate(
+    TaxonLabel = {
+      ranks <- c(Species, Genus, Family, Order, Class, Phylum, Kingdom)
+      names(ranks) <- rank_order
+      ranks <- ranks[!is.na(ranks) & ranks != ""]
+      matched <- ranks[ranks %in% ancom$TaxonLabel]
+      if (length(matched) > 0) matched[1] else NA_character_
+    },
+    MatchRank = {
+      ranks <- c(Species, Genus, Family, Order, Class, Phylum, Kingdom)
+      names(ranks) <- rank_order
+      ranks <- ranks[!is.na(ranks) & ranks != ""]
+      matched_rank <- names(ranks)[ranks %in% ancom$TaxonLabel]
+      if (length(matched_rank) > 0) matched_rank[1] else NA_character_
+    }
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(TaxonLabel)) %>%
+  left_join(ancom, by = "TaxonLabel", suffix = c(".MAG", ".ASV")) %>%
+  filter(
+    (regulation == "Upregulated" & Group == "PD") |
+    (regulation == "Downregulated" & Group == "Healthy")
+  )
+```
+
+```{r MAG-genus}
+
+MAGs_genus <- MAGs_final %>%
+  filter(MatchRank == "Genus")
+
+# Extract DEGs taxonomy columns for PD group
+MAGs_PD <- MAGs_genus %>%
+  filter(Group == "PD")
+
+# Extract DEGs taxonomy columns for Healthy group
+MAGs_Healthy <- MAGs_genus %>%
+  filter(Group == "Healthy") 
+
+# Save them as CSV files
+write.csv(MAGs_genus, "./MAGs_final/MAGs_genus.csv", quote = TRUE, row.names = FALSE)
+
+write.csv(MAGs_PD, "./MAGs_final/MAGs_PD_taxa.csv", quote = TRUE, row.names = FALSE)
+
+write.csv(MAGs_Healthy, "./MAGs_final/MAGs_Healthy_taxa.csv", quote = TRUE, row.names = FALSE)
+```
+
+# Sankey plot
+
+```{r load-data}
+
+# Loading MAGs for PD and Healthy
+
+MAGs_PD <- read.csv("./MAGs_final/MAGs_PD_taxa.csv", header = TRUE, stringsAsFactors = FALSE)
+
+MAGs_Healthy <- read.csv("./MAGs_final/MAGs_Healthy_taxa.csv", header = TRUE, stringsAsFactors = FALSE)
+
+```
+
+# PD
+
+```{r sankey-data}
+
+# Clean MAG taxonomy table
+Sankey_PD <- MAGs_PD %>%
+  select(MAG_gene, ends_with(".MAG"), -classification.MAG, -Kingdom.MAG) %>%
+  mutate(across(ends_with(".MAG"), ~ gsub("^[a-z]__", "", .))) %>%
+  rename_with(~ gsub("\\.MAG$", "", .)) %>%
+  mutate(across(c(Phylum, Class, Order, Family, Genus, Species),
+                ~ na_if(., ""))) %>%
+  group_by(MAG_gene) %>%
+  mutate(row_num = row_number()) %>%
+  ungroup() %>%
+  mutate(
+    MAG_gene = if_else(
+      row_num == 1,
+      MAG_gene,
+      paste0(MAG_gene, ".", letters[(row_num - 2) %% length(letters) + 1])
+    )
+  ) %>%
+  select(-row_num) %>%
+  arrange(MAG_gene) %>%
+  separate(
+    MAG_gene,
+    into = c("Prefix", "MAG", "Gene"),
+    sep = "__",
+    remove = TRUE,
+    extra = "merge",
+    fill = "right"
+  ) %>%
+  select(-Prefix, -MAG)
+
+```
+
+```{r sankey-links}
+
+# Define taxonomy hierarchy
+tax_levels <- c("Phylum", "Class", "Order",
+                "Family", "Genus", "Species")
+
+# Build taxonomic connections weighted by gene counts
+Sankey_links <- Sankey_PD %>%
+  select(Gene, Phylum, Class, Order, Family, Genus, Species) %>%
+  distinct() %>%
+  mutate(row_id = row_number()) %>%
+  pivot_longer(
+    cols = tax_levels,
+    names_to = "level",
+    values_to = "node"
+  ) %>%
+  mutate(level = factor(level, levels = tax_levels)) %>%
+  arrange(row_id, level) %>%
+  group_by(row_id) %>%
+  mutate(
+    next_node = lead(node),
+    Phylum_link = first(node[level == "Phylum"])
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(next_node)) %>%
+  count(Phylum_link, node, next_node, name = "value") %>%
+  rename(
+    source = node,
+    target = next_node
+  )
+
+
+```
+
+```{r sankey-nodes}
+# Build nodes
+Sankey_nodes <- data.frame(
+  name = unique(c(Sankey_links$source, Sankey_links$target)),
+  stringsAsFactors = FALSE
+)
+
+# Assign node levels by taxonomy hierarchy
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(Level = case_when(
+    name %in% Sankey_PD$Phylum  ~ "Phylum",
+    name %in% Sankey_PD$Class   ~ "Class",
+    name %in% Sankey_PD$Order   ~ "Order",
+    name %in% Sankey_PD$Family  ~ "Family",
+    name %in% Sankey_PD$Genus   ~ "Genus",
+    name %in% Sankey_PD$Species ~ "Species",
+    TRUE ~ "Other"
+  ))
+
+# Arrange nodes by hierarchy order
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(Level = factor(
+    Level,
+    levels = c("Phylum", "Class", "Order", "Family", "Genus", "Species")
+  )) %>%
+  arrange(Level)
+
+# Add numeric IDs after arranging
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(nodeID = row_number() - 1)
+
+Sankey_links <- Sankey_links %>%
+  mutate(
+    IDsource = match(source, Sankey_nodes$name) - 1,
+    IDtarget = match(target, Sankey_nodes$name) - 1
+  )
+
+```
+
+```{r sankey-plot, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Node colors by taxonomic level
+level_colors <- c(
+  Phylum  = pal_npg("nrc")(10)[1],
+  Class   = pal_npg("nrc")(10)[2],
+  Order   = pal_npg("nrc")(10)[3],
+  Family  = pal_npg("nrc")(10)[4],
+  Genus   = pal_npg("nrc")(10)[5],
+  Species = pal_npg("nrc")(10)[6]
+)
+
+# Link colors by Phylum
+base_palette <- c(
+  "#0072B2",  # blue
+  "#D55E00",  # vermillion
+  "#009E73",  # green
+  "#CC79A7",  # magenta
+  "#F0E442",  # yellow
+  "#56B4E9",  # sky blue
+  "#E69F00",  # orange
+  "#000000"   # black
+)
+
+phyla <- unique(Sankey_links$Phylum_link)
+n_phy <- length(phyla)
+
+phyla_palette <- if (n_phy <= length(base_palette)) {
+  base_palette[1:n_phy]
+} else {
+  colorRampPalette(base_palette)(n_phy)
+}
+
+# Prepare JS domains and ranges
+
+phylum_domain <- paste0('"', phyla, '"', collapse = ",")
+phylum_range  <- paste0('"', phyla_palette, '"', collapse = ",")
+
+level_domain <- paste0('"', names(level_colors), '"', collapse = ",")
+level_range  <- paste0('"', level_colors, '"', collapse = ",")
+```
+
+```{r sankey-plot, echo=FALSE, message=FALSE, warning=FALSE}
+
+# -----------------------------
+# 1. Create Sankey network
+# -----------------------------
+sankey_plot <- sankeyNetwork(
+  Links = Sankey_links,
+  Nodes = Sankey_nodes,
+  Source = "IDsource",
+  Target = "IDtarget",
+  Value  = "value",
+  NodeID = "name",
+  NodeGroup = "Level",
+  LinkGroup = "Phylum_link",
+  fontSize = 14,
+  nodeWidth = 22
+)
+
+# -----------------------------
+# 2. Apply custom coloring via JS
+# -----------------------------
+sankey_plot <- htmlwidgets::onRender(
+  sankey_plot,
+  sprintf(
+    '
+    function(el, x) {
+    
+       // Force Helvetica font
+      d3.select(el)
+        .style("font-family", "Helvetica, Arial, sans-serif");
+
+      // Node color scale (by Level)
+      var levelColors = d3.scaleOrdinal()
+        .domain([%s])
+        .range([%s]);
+
+      // Link color scale (by Phylum_link)
+      var magColors = d3.scaleOrdinal()
+        .domain([%s])
+        .range([%s]);
+
+      // Apply node colors
+      d3.select(el).selectAll(".node rect")
+        .style("fill", function(d) {
+          return levelColors(d.group);
+        });
+
+      // Apply link colors
+      d3.select(el).selectAll(".link")
+        .style("stroke", function(d) {
+          return magColors(d.group);
+        })
+        .style("stroke-opacity", 0.2);
+    }
+    ',
+    level_domain, level_range,
+    phylum_domain, phylum_range
+  )
+)
+
+# -----------------------------
+# 3. Display
+# -----------------------------
+sankey_plot
+
+# Save as HTML
+saveWidget(sankey_plot, "./Sankey/PD_sankey.html", selfcontained = TRUE)
+
+# Horizontal layout: width > height
+
+webshot2::webshot(
+  url = "./Sankey/PD_sankey.html",
+  file = "./Sankey/PD_sankey.pdf",
+  vwidth = 1500,
+  vheight = 600,
+  cliprect = "viewport"
+)
+```
+
+
+# Healthy
+
+```{r sankey-data}
+
+# Clean MAG taxonomy table
+Sankey_Healthy <- MAGs_Healthy %>%
+  select(MAG_gene, ends_with(".MAG"), -classification.MAG, -Kingdom.MAG) %>%
+  mutate(across(ends_with(".MAG"), ~ gsub("^[a-z]__", "", .))) %>%
+  rename_with(~ gsub("\\.MAG$", "", .)) %>%
+  mutate(across(c(Phylum, Class, Order, Family, Genus, Species),
+                ~ na_if(., ""))) %>%
+  group_by(MAG_gene) %>%
+  mutate(row_num = row_number()) %>%
+  ungroup() %>%
+  mutate(
+    MAG_gene = if_else(
+      row_num == 1,
+      MAG_gene,
+      paste0(MAG_gene, ".", letters[(row_num - 2) %% length(letters) + 1])
+    )
+  ) %>%
+  select(-row_num) %>%
+  arrange(MAG_gene) %>%
+  separate(
+    MAG_gene,
+    into = c("Prefix", "MAG", "Gene"),
+    sep = "__",
+    remove = TRUE,
+    extra = "merge",
+    fill = "right"
+  ) %>%
+  select(-Prefix, -MAG)
+
+```
+
+```{r sankey-links}
+
+# Define taxonomy hierarchy
+tax_levels <- c("Phylum", "Class", "Order",
+                "Family", "Genus", "Species")
+
+# Build taxonomic connections weighted by gene counts
+Sankey_links <- Sankey_Healthy %>%
+  select(Gene, Phylum, Class, Order, Family, Genus, Species) %>%
+  distinct() %>%
+  mutate(row_id = row_number()) %>%
+  pivot_longer(
+    cols = tax_levels,
+    names_to = "level",
+    values_to = "node"
+  ) %>%
+  mutate(level = factor(level, levels = tax_levels)) %>%
+  arrange(row_id, level) %>%
+  group_by(row_id) %>%
+  mutate(
+    next_node = lead(node),
+    Phylum_link = first(node[level == "Phylum"])
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(next_node)) %>%
+  count(Phylum_link, node, next_node, name = "value") %>%
+  rename(
+    source = node,
+    target = next_node
+  )
+
+
+```
+
+```{r sankey-nodes}
+# Build nodes
+Sankey_nodes <- data.frame(
+  name = unique(c(Sankey_links$source, Sankey_links$target)),
+  stringsAsFactors = FALSE
+)
+
+# Assign node levels by taxonomy hierarchy
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(Level = case_when(
+    name %in% Sankey_PD$Phylum  ~ "Phylum",
+    name %in% Sankey_PD$Class   ~ "Class",
+    name %in% Sankey_PD$Order   ~ "Order",
+    name %in% Sankey_PD$Family  ~ "Family",
+    name %in% Sankey_PD$Genus   ~ "Genus",
+    name %in% Sankey_PD$Species ~ "Species",
+    TRUE ~ "Other"
+  ))
+
+# Arrange nodes by hierarchy order
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(Level = factor(
+    Level,
+    levels = c("Phylum", "Class", "Order", "Family", "Genus", "Species")
+  )) %>%
+  arrange(Level)
+
+# Add numeric IDs after arranging
+Sankey_nodes <- Sankey_nodes %>%
+  mutate(nodeID = row_number() - 1)
+
+Sankey_links <- Sankey_links %>%
+  mutate(
+    IDsource = match(source, Sankey_nodes$name) - 1,
+    IDtarget = match(target, Sankey_nodes$name) - 1
+  )
+
+```
+
+```{r sankey-plot, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Node colors by taxonomic level
+level_colors <- c(
+  Phylum  = pal_npg("nrc")(10)[1],
+  Class   = pal_npg("nrc")(10)[2],
+  Order   = pal_npg("nrc")(10)[3],
+  Family  = pal_npg("nrc")(10)[4],
+  Genus   = pal_npg("nrc")(10)[5],
+  Species = pal_npg("nrc")(10)[6]
+)
+
+# Link colors by Phylum
+base_palette <- c(
+  "#0072B2",  # blue
+  "#D55E00",  # vermillion
+  "#009E73",  # green
+  "#CC79A7",  # magenta
+  "#F0E442",  # yellow
+  "#56B4E9",  # sky blue
+  "#E69F00",  # orange
+  "#000000"   # black
+)
+
+phyla <- unique(Sankey_links$Phylum_link)
+n_phy <- length(phyla)
+
+phyla_palette <- if (n_phy <= length(base_palette)) {
+  base_palette[1:n_phy]
+} else {
+  colorRampPalette(base_palette)(n_phy)
+}
+
+# Prepare JS domains and ranges
+
+phylum_domain <- paste0('"', phyla, '"', collapse = ",")
+phylum_range  <- paste0('"', phyla_palette, '"', collapse = ",")
+
+level_domain <- paste0('"', names(level_colors), '"', collapse = ",")
+level_range  <- paste0('"', level_colors, '"', collapse = ",")
+```
+
+```{r sankey-plot, echo=FALSE, message=FALSE, warning=FALSE}
+
+# -----------------------------
+# 1. Create Sankey network
+# -----------------------------
+sankey_plot <- sankeyNetwork(
+  Links = Sankey_links,
+  Nodes = Sankey_nodes,
+  Source = "IDsource",
+  Target = "IDtarget",
+  Value  = "value",
+  NodeID = "name",
+  NodeGroup = "Level",
+  LinkGroup = "Phylum_link",
+  fontSize = 14,
+  nodeWidth = 22
+)
+
+# -----------------------------
+# 2. Apply custom coloring via JS
+# -----------------------------
+sankey_plot <- htmlwidgets::onRender(
+  sankey_plot,
+  sprintf(
+    '
+    function(el, x) {
+    
+       // Force Helvetica font
+      d3.select(el)
+        .style("font-family", "Helvetica, Arial, sans-serif");
+
+      // Node color scale (by Level)
+      var levelColors = d3.scaleOrdinal()
+        .domain([%s])
+        .range([%s]);
+
+      // Link color scale (by Phylum_link)
+      var magColors = d3.scaleOrdinal()
+        .domain([%s])
+        .range([%s]);
+
+      // Apply node colors
+      d3.select(el).selectAll(".node rect")
+        .style("fill", function(d) {
+          return levelColors(d.group);
+        });
+
+      // Apply link colors
+      d3.select(el).selectAll(".link")
+        .style("stroke", function(d) {
+          return magColors(d.group);
+        })
+        .style("stroke-opacity", 0.2);
+    }
+    ',
+    level_domain, level_range,
+    phylum_domain, phylum_range
+  )
+)
+
+# -----------------------------
+# 3. Display
+# -----------------------------
+sankey_plot
+
+# Save as HTML
+saveWidget(sankey_plot, "./Sankey/Healthy_sankey.html", selfcontained = TRUE)
+
+# Horizontal layout: width > height
+
+webshot2::webshot(
+  url = "./Sankey/Healthy_sankey.html",
+  file = "./Sankey/Healthy_sankey.pdf",
+  vwidth = 1500,
+  vheight = 300,
+  cliprect = "viewport"
+)
+```
+
+# Session information
+
+```{r, session-information}
+sessionInfo()
+```
