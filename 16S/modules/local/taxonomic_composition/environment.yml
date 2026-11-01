@@ -1,0 +1,11 @@
+name: taxonomic-composition
+
+channels:
+  - conda-forge
+
+dependencies:
+  - r-base=4.4
+  - r-dplyr
+  - r-tidyr
+  - r-ggplot2
+  - r-scales

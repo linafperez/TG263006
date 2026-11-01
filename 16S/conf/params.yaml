@@ -1,0 +1,116 @@
+# ============================================================
+# DEFAULT PIPELINE PARAMETERS
+# ============================================================
+
+# Input samplesheet
+input: null
+
+# Output directory
+outdir: "results"
+
+# ------------------------------------------------------------
+# PRIMERS
+# ------------------------------------------------------------
+
+primer_forward: null
+primer_reverse: null
+
+# ------------------------------------------------------------
+# DADA2
+# ------------------------------------------------------------
+
+trunc_len_f: 250
+trunc_len_r: 250
+
+trim_left_f: 0
+trim_left_r: 0
+
+max_ee_f: 2.0
+max_ee_r: 2.0
+
+trunc_q: 2
+min_overlap: 12
+
+pooling_method: "independent"
+chimera_method: "consensus"
+
+n_reads_learn: 1000000
+
+hashed_feature_ids: true
+retain_all_samples: true
+
+# ------------------------------------------------------------
+# SILVA
+# ------------------------------------------------------------
+
+silva_version: "138.2"
+silva_target: "SSURef_NR99"
+silva_include_species_labels: true
+
+silva_derep_mode: "uniq"
+
+silva_min_length: 200
+silva_max_length: 350
+silva_extract_identity: 0.8
+
+# ------------------------------------------------------------
+# TAXONOMIC CLASSIFICATION
+# ------------------------------------------------------------
+
+taxonomy_read_orientation: null
+taxonomy_confidence: null
+
+# ------------------------------------------------------------
+# TAXONOMIC FILTERING
+# ------------------------------------------------------------
+
+taxonomy_exclude: null
+
+# ------------------------------------------------------------
+# TAXONOMIC COLLAPSE
+# ------------------------------------------------------------
+
+taxonomy_collapse_level: null
+
+# ------------------------------------------------------------
+# SAMPLE METADATA
+# ------------------------------------------------------------
+
+metadata: null
+
+
+# ------------------------------------------------------------
+# ABUNDANCE PREPROCESSING
+# ------------------------------------------------------------
+
+prevalence_threshold: null
+
+
+# ------------------------------------------------------------
+# ALPHA DIVERSITY
+# ------------------------------------------------------------
+
+alpha_group_column: null
+
+
+# ------------------------------------------------------------
+# TAXONOMIC COMPOSITION
+# ------------------------------------------------------------
+
+composition_taxonomic_rank: null
+composition_rare_threshold: null
+composition_group_column: null
+
+
+# ------------------------------------------------------------
+# BETA DIVERSITY
+# ------------------------------------------------------------
+
+beta_zero_method: null
+beta_zero_fraction: null
+beta_zero_threshold: null
+
+beta_group_column: null
+
+permanova_column: null
+permanova_permutations: null

@@ -1,0 +1,118 @@
+# ============================================================
+# GUT-TO-SOIL TEST DATASET
+# ============================================================
+
+input: "data/test_gut_to_soil/samplesheet.csv"
+
+outdir: "results/test_gut_to_soil"
+
+
+# ------------------------------------------------------------
+# PRIMERS — 16S V4 F515/R806
+# ------------------------------------------------------------
+
+primers: "data/primers.fasta"
+
+
+# ------------------------------------------------------------
+# DADA2
+# ------------------------------------------------------------
+
+trunc_len_f: 250
+trunc_len_r: 250
+
+trim_left_f: 0
+trim_left_r: 0
+
+max_ee_f: 2.0
+max_ee_r: 2.0
+
+trunc_q: 2
+min_overlap: 12
+
+pooling_method: "independent"
+chimera_method: "consensus"
+
+n_reads_learn: 1000000
+
+hashed_feature_ids: true
+retain_all_samples: true
+
+
+# ------------------------------------------------------------
+# SILVA
+# ------------------------------------------------------------
+
+silva_version: "138.2"
+silva_target: "SSURef_NR99"
+silva_include_species_labels: true
+
+silva_sequences: "data/silva/silva-sequences.qza"
+silva_taxonomy: "data/silva/silva-taxonomy.qza"
+
+silva_derep_mode: "uniq"
+
+silva_min_length: 200
+silva_max_length: 350
+silva_extract_identity: 0.8
+
+
+# ------------------------------------------------------------
+# TAXONOMY
+# ------------------------------------------------------------
+
+taxonomy_read_orientation: auto
+taxonomy_confidence: 0.7
+
+
+# ------------------------------------------------------------
+# FILTERING AND COLLAPSE
+# ------------------------------------------------------------
+
+taxonomy_exclude: "mitochondria,chloroplast,Eukaryota"
+taxonomy_collapse_level: 6
+
+
+# ------------------------------------------------------------
+# METADATA - TAXA BARPLOT
+# ------------------------------------------------------------
+
+metadata: "data/test_gut_to_soil/sample_metadata.tsv"
+
+
+# ------------------------------------------------------------
+# ABUNDANCE
+# ------------------------------------------------------------
+
+prevalence_threshold: 0.10
+
+
+# ------------------------------------------------------------
+# ALPHA DIVERSITY
+# ------------------------------------------------------------
+
+alpha_group_column: "Group"
+
+
+# ------------------------------------------------------------
+# TAXONOMIC COMPOSITION
+# ------------------------------------------------------------
+
+composition_taxonomic_rank: "Genus"
+composition_rare_threshold: 0.01
+composition_group_column: "Group"
+
+
+# ------------------------------------------------------------
+# BETA DIVERSITY
+# ------------------------------------------------------------
+
+beta_zero_method: "CZM"
+beta_zero_fraction: 0.65
+beta_zero_threshold: 0.5
+
+beta_group_column: "Group"
+
+# Not tested with this 3-sample synthetic dataset
+permanova_column: null
+permanova_permutations: 999

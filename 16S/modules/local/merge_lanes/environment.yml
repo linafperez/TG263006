@@ -1,0 +1,8 @@
+name: merge_lanes
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - coreutils

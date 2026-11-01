@@ -1,0 +1,9 @@
+name: samplesheet_check
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - python=3.12
+  - pandas

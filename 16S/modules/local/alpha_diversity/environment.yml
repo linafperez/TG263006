@@ -1,0 +1,9 @@
+name: alpha-diversity
+
+channels:
+  - conda-forge
+
+dependencies:
+  - r-base=4.4
+  - r-vegan
+  - r-ggplot2

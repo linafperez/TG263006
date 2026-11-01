@@ -1,0 +1,10 @@
+name: beta-diversity
+
+channels:
+  - conda-forge
+
+dependencies:
+  - r-base=4.4
+  - r-vegan
+  - r-zcompositions
+  - r-ggplot2
