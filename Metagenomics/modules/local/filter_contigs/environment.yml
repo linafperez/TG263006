@@ -1,0 +1,6 @@
+name: filter-contigs
+channels:
+  - conda-forge
+dependencies:
+  - bash=5.2.37
+  - gawk=5.3.1

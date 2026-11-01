@@ -1,0 +1,8 @@
+name: metagenomics-sratools-3.4.1
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - sra-tools=3.4.1
+  - pigz=2.8
+  - gawk

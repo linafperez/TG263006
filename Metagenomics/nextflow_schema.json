@@ -1,0 +1,315 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/linafperez/metagenomics-nextflow/main/nextflow_schema.json",
+  "title": "Shotgun metagenomics pipeline parameters",
+  "description": "Parameter contract for the production Nextflow workflow.",
+  "type": "object",
+  "additionalProperties": true,
+  "oneOf": [
+    {
+      "title": "Local paired FASTQ input",
+      "required": ["input"],
+      "properties": {
+        "input": {"type": "string", "minLength": 1},
+        "sraProject": {"type": "null"},
+        "sraSamples": {"type": "null"}
+      }
+    },
+    {
+      "title": "NCBI BioProject input",
+      "required": ["sraProject", "sraSamples"],
+      "properties": {
+        "input": {"type": "null"},
+        "sraProject": {
+          "type": "string",
+          "pattern": "^PRJ(?:NA|EB|DB)[0-9]+$"
+        },
+        "sraSamples": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  ],
+  "allOf": [
+    {
+      "if": {
+        "required": ["spadesCoassemblyMode"],
+        "properties": {"spadesCoassemblyMode": {"const": "condition"}}
+      },
+      "then": {
+        "required": ["groupColumn"],
+        "properties": {"groupColumn": {"type": "string", "minLength": 1}}
+      }
+    }
+  ],
+  "properties": {
+    "spadesCoassemblyMode": {
+      "type": "string",
+      "enum": ["global", "condition"],
+      "default": "global",
+      "description": "SPAdes coassembly strategy. condition requires groupColumn and merges independently assembled groups before a single downstream branch. MEGAHIT remains global."
+    },
+    "input": {
+      "type": ["string", "null"],
+      "description": "CSV samplesheet with sample, fastq_1, and fastq_2 columns. Mutually exclusive with sraProject."
+    },
+    "sraProject": {
+      "type": ["string", "null"],
+      "pattern": "^PRJ(?:NA|EB|DB)[0-9]+$",
+      "description": "NCBI BioProject accession used to resolve and validate the explicit sraSamples cohort. Required together with sraSamples and mutually exclusive with input."
+    },
+    "sraSamples": {
+      "type": ["string", "null"],
+      "description": "Explicit TSV of BioSample accessions selected by the user (--sra-samples). Required together with sraProject."
+    },
+    "groupColumn": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$",
+      "description": "Categorical column propagated as meta.group. The group column is detected by default if present. Other input columns are retained in meta.metadata."
+    },
+    "sraScratchDir": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional Nextflow scratch root for SRA tasks. Declared outputs return to persistent work; only task scratch is cleaned by Nextflow."
+    },
+    "sraPlatforms": {
+      "type": "string",
+      "minLength": 1,
+      "default": "ILLUMINA,BGISEQ",
+      "description": "Comma-separated short-read SRA platform allowlist."
+    },
+    "sraMaxSize": {
+      "type": "string",
+      "pattern": "^(?:u|[1-9][0-9]*(?:[KMGT]B?)?)$",
+      "default": "u",
+      "description": "Value passed to prefetch --max-size; u means unlimited after metadata validation."
+    },
+    "sraContainer": {
+      "type": "string",
+      "minLength": 1,
+      "default": "ghcr.io/linafperez/metagenomics-sra-tools:3.4.1-pigz-2.8",
+      "description": "Image containing SRA Toolkit 3.4.1 and pigz 2.8. Python is not used for read acquisition."
+    },
+    "sraEmail": {
+      "type": ["string", "null"],
+      "format": "email",
+      "description": "Optional contact email sent with NCBI E-utilities requests."
+    },
+    "sraContainerOptions": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional runtime container options for SRA acquisition and merging; ordinary task staging needs no external storage binds."
+    },
+    "enableGpu": {
+      "type": "boolean",
+      "default": false,
+      "description": "Internal compute-device flag. Direct Nextflow users must also select the gpu profile; the launcher --enable-gpu sets both."
+    },
+    "gpuAccelerators": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1,
+      "default": 1,
+      "description": "Exactly one accelerator is requested by each verified GPU-enabled process."
+    },
+    "gpuContainerOptions": {
+      "type": ["string", "null"],
+      "description": "Internal runtime exposure option: Docker --gpus 1 or Apptainer/Singularity --nv."
+    },
+    "slurmGpuGres": {
+      "type": ["string", "null"],
+      "description": "Explicit site-specific SLURM GRES value used only in the gpu profile."
+    },
+    "gpuTelemetryInterval": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 10,
+      "description": "Seconds between best-effort nvidia-smi samples inside GPU tasks."
+    },
+    "comebinGpuContainer": {
+      "type": "string",
+      "default": "metagenomics/comebin-gpu:1.0.4-cuda11.8"
+    },
+    "semibinGpuContainer": {
+      "type": "string",
+      "default": "metagenomics/semibin-gpu:1.5.0-cuda11.8"
+    },
+    "vambGpuContainer": {
+      "type": "string",
+      "default": "metagenomics/vamb-gpu:5.0.4-cuda12.4"
+    },
+    "outdir": {
+      "type": "string",
+      "minLength": 1,
+      "default": "results",
+      "description": "Result publication directory."
+    },
+    "publish_dir_mode": {
+      "type": "string",
+      "enum": [
+        "copy",
+        "copyNoFollow",
+        "link",
+        "rellink",
+        "symlink"
+      ],
+      "default": "copy"
+    },
+    "conda_cache_dir": {
+      "type": ["string", "null"],
+      "description": "Optional Conda environment cache directory."
+    },
+    "reportsDir": {
+      "type": ["string", "null"],
+      "description": "Internal per-invocation directory for native Nextflow trace, report, timeline, and DAG artifacts."
+    },
+    "host_bowtie2_index": {
+      "type": ["string", "null"],
+      "description": "GRCh38.p14 Bowtie2 index prefix."
+    },
+    "checkm2_db": {
+      "type": ["string", "null"],
+      "description": "CheckM2 database directory or DIAMOND database file."
+    },
+    "gunc_db": {
+      "type": ["string", "null"],
+      "description": "GUNC ProGenomes database file."
+    },
+    "gtdbtk_db": {
+      "type": ["string", "null"],
+      "description": "GTDB-Tk release 226 database directory."
+    },
+    "phylophlan_db": {
+      "type": ["string", "null"],
+      "description": "PhyloPhlAn marker database directory."
+    },
+    "phylophlan_config": {
+      "type": ["string", "null"],
+      "description": "PhyloPhlAn configuration using IQ-TREE 3.0.1."
+    },
+    "phylophlan_container": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": "ghcr.io/linafperez/metagenomics-phylophlan-iqtree:3.1.1-3.0.1",
+      "description": "Container image containing PhyloPhlAn 3.1.1 and IQ-TREE 3.0.1."
+    },
+    "genemark_key": {
+      "type": ["string", "null"],
+      "description": "External GeneMark license key path."
+    },
+    "genemark_home": {
+      "type": ["string", "null"],
+      "description": "External GeneMarkS-2 1.15 installation directory."
+    },
+    "eggnog_db": {
+      "type": ["string", "null"],
+      "description": "eggNOG-mapper 2.1.13 compatible database directory."
+    },
+    "interproscan_data": {
+      "type": ["string", "null"],
+      "description": "InterProScan 5.59-91.0 data directory."
+    },
+    "interproscan_fingerprintscan_path": {
+      "type": ["string", "null"],
+      "description": "Optional site-provided PRINTS fingerPRINTScan executable or wrapper used by InterProScan."
+    },
+    "interproscan_cath_resolve_hits_path": {
+      "type": ["string", "null"],
+      "description": "Optional site-provided CATH cath-resolve-hits executable used by InterProScan Gene3D."
+    },
+    "interproscan_ps_path": {
+      "type": ["string", "null"],
+      "description": "Optional ps compatibility executable prepended to PATH for InterProScan."
+    },
+    "min_contig_length": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1500
+    },
+    "hq_completeness": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 90.0
+    },
+    "hq_contamination": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 5.0
+    },
+    "derep_ani": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "default": 0.99
+    },
+    "species_ani": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "default": 0.95
+    },
+    "derep_coverage": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "default": 0.3
+    },
+    "save_clean_reads": {"type": "boolean", "default": false},
+    "save_host_removed_reads": {"type": "boolean", "default": true},
+    "save_bam": {"type": "boolean", "default": false},
+    "save_intermediates": {"type": "boolean", "default": false},
+    "spades_only_assembler": {
+      "type": "boolean",
+      "default": false,
+      "description": "Run metaSPAdes with --only-assembler, skipping BayesHammer read error correction for memory-constrained environments."
+    },
+    "slurm_account": {"type": ["string", "null"]},
+    "slurm_queue": {"type": ["string", "null"]},
+    "slurm_qos": {"type": ["string", "null"]},
+    "slurm_cluster_options": {"type": ["string", "null"]},
+    "slurm_queue_size": {"type": "integer", "minimum": 1, "default": 100},
+    "local_max_jobs": {"type": "integer", "minimum": 1, "default": 2},
+    "max_cpus": {"type": "integer", "minimum": 1, "default": 32},
+    "max_memory": {
+      "type": "string",
+      "pattern": "^[0-9]+(?:\\.[0-9]+)?\\s*(?:KB|MB|GB|TB)$",
+      "default": "1800 GB"
+    },
+    "max_time": {
+      "type": "string",
+      "minLength": 1,
+      "default": "14d"
+    },
+    "sraRunInfo": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional existing NCBI RunInfo CSV. Bypasses online metadata retrieval; eligibility validation remains mandatory."
+    },
+    "sraDownloadMaxForks": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 4,
+      "description": "Maximum concurrent per-run SRA acquisitions. disk_efficient uses one acquisition at a time while other stages can run."
+    },
+    "storage_max_jobs": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 2,
+      "description": "Executor queue size in the opt-in disk_efficient profile; no outputs are deleted."
+    }
+  }
+}

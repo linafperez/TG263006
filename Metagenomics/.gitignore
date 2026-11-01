@@ -1,0 +1,58 @@
+# Nextflow
+.nextflow*
+work/
+results/
+.tools/
+.conda/
+.apptainer/
+__pycache__/
+*.py[cod]
+.nextflow.log*
+
+# Sequencing data
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+*.sra
+
+# Alignment files
+*.bam
+*.bai
+*.sam
+
+# Large biological data
+RAW/
+raw/
+!assets/raw/
+!assets/raw/PRJNA782492_metagenomic_samples.tsv
+!assets/raw/PRJNA782492_subset8.tsv
+databases/
+database/
+db/
+containers/*.sif
+
+# Local environment and secrets
+.env
+*.key
+gm_key
+.gm_key
+.gmhmmp2_key
+recommendations/
+
+# Machine-specific samplesheets
+samplesheet.local.csv
+samplesheet.hpc.csv
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local reports, temporary downloads, and validation artifacts
+*.log
+*.partial
+*.tmp
+*.pid
+.pytest_cache/
+.coverage
+htmlcov/
