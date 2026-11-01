@@ -1,0 +1,66 @@
+name: "transcript_prediction"
+description: Predict coding sequences and proteins from assembled transcripts with TransDecoder and retain a complete-CDS subset.
+keywords:
+  - transdecoder
+  - transcript
+  - protein
+  - cds
+  - coding_sequence
+  - metatranscriptomics
+components:
+  - transdecoder
+  - filter_transdecoder_complete_isoforms
+input:
+  - transcripts:
+      type: file
+      description: |
+        Assembled transcript FASTA file used for coding sequence prediction.
+      pattern: "*.fasta"
+output:
+  - pep:
+      type: file
+      description: |
+        Raw protein sequences predicted by TransDecoder and retained for downstream MAG annotation.
+      pattern: "*.pep"
+  - cds:
+      type: file
+      description: |
+        Raw coding sequences predicted by TransDecoder.
+      pattern: "*.cds"
+  - gff3:
+      type: file
+      description: |
+        Raw TransDecoder GFF3 annotation file.
+      pattern: "*.gff3"
+  - complete_pep:
+      type: file
+      description: |
+        Predicted protein sequences retained after complete-CDS filtering.
+      pattern: "*.pep"
+  - complete_cds:
+      type: file
+      description: |
+        Coding sequences retained after complete-CDS filtering.
+      pattern: "*.cds"
+  - complete_gff3:
+      type: file
+      description: |
+        GFF3 annotations retained after complete-CDS filtering.
+      pattern: "*.gff3"
+  - transdecoder_versions:
+      type: file
+      description: |
+        File containing the TransDecoder software version.
+      pattern: "*.yml"
+  - filter_log:
+      type: file
+      description: |
+        Log generated while filtering complete TransDecoder isoforms.
+      pattern: "*.log"
+  - filter_versions:
+      type: file
+      description: |
+        File containing software versions for the complete-CDS filtering step.
+      pattern: "*.yml"
+authors:
+  - "Gabriela Bonilla"

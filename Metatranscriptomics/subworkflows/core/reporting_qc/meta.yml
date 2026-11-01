@@ -1,0 +1,41 @@
+name: reporting_qc
+description: Generate the final aggregated quality-control report for the metatranscriptomics pipeline using MultiQC.
+keywords:
+  - multiqc
+  - reporting
+  - quality control
+  - metatranscriptomics
+
+components:
+  - multiqc
+
+input:
+  - multiqc_input_ch:
+      type: file
+      description: |
+        Collected QC and analysis outputs from the metatranscriptomics workflow.
+        Inputs include FastQC, fastp, SortMeRNA, STAR, rnaQUAST custom content,
+        DIAMOND, and Salmon outputs.
+
+output:
+  - html:
+      type: file
+      description: |
+        Final interactive MultiQC HTML report.
+      pattern: "multiqc_report.html"
+
+  - data:
+      type: directory
+      description: |
+        MultiQC parsed data directory containing exported metrics,
+        tables, logs, and plot data.
+      pattern: "multiqc_data"
+
+  - versions:
+      type: file
+      description: |
+        MultiQC software version information.
+      pattern: "multiqc_versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

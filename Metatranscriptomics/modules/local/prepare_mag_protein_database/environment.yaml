@@ -1,0 +1,9 @@
+name: prepare_mag_protein_database
+
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+
+dependencies:
+  - diamond=2.1.10

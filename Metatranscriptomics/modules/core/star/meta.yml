@@ -1,0 +1,43 @@
+name: star
+description: Align paired-end non-rRNA reads to the human reference genome and retain unmapped non-human reads.
+keywords:
+  - alignment
+  - host removal
+  - human
+  - RNA-seq
+  - metatranscriptomics
+
+tools:
+  - star:
+      description: Spliced Transcripts Alignment to a Reference
+      homepage: https://github.com/alexdobin/STAR
+      documentation: https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf
+
+input:
+  - meta:
+      type: map
+      description: Sample metadata.
+  - reads:
+      type: file
+      description: Paired-end non-rRNA FASTQ files.
+      pattern: "*.{fastq,fq}.gz"
+  - star_index:
+      type: directory
+      description: STAR index generated from the human GRCh38.p14 reference genome and GENCODE v44 annotation.
+
+output:
+  - reads:
+      type: file
+      description: Paired-end reads that did not align to the human genome.
+      pattern: "*_non_human_R{1,2}.fastq.gz"
+  - log:
+      type: file
+      description: STAR final alignment statistics.
+      pattern: "*_Log.final.out"
+  - versions:
+      type: file
+      description: STAR software version.
+      pattern: "*_versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

@@ -1,0 +1,52 @@
+name: create_transcript_mag_gtf
+description: Link complete TransDecoder ORFs and transcripts to MAG-specific genes using filtered DIAMOND hits.
+
+keywords:
+  - GTF
+  - transcript
+  - MAG
+  - gene mapping
+  - metatranscriptomics
+
+input:
+  - diamond_best_hits:
+      type: file
+      description: Filtered best DIAMOND hits.
+      pattern: "*_diamond_best_hits.tsv"
+
+  - transdecoder_gff3:
+      type: file
+      description: GFF3 annotation for complete TransDecoder ORFs.
+      pattern: "*.complete.transdecoder.gff3"
+
+  - assembly_id:
+      type: string
+      description: Assembly identifier.
+
+  - outdir_name:
+      type: string
+      description: Output directory label.
+
+output:
+  - gtf:
+      type: file
+      description: Transcript-to-MAG gene annotation in GTF format.
+      pattern: "*_transcript_mag.gtf"
+
+  - map:
+      type: file
+      description: Explicit ORF, transcript, MAG and gene mapping table.
+      pattern: "*_transcript_mag_map.tsv"
+
+  - log:
+      type: file
+      description: Mapping-generation log.
+      pattern: "*_create_transcript_mag_gtf.log"
+
+  - versions:
+      type: file
+      description: Software versions.
+      pattern: "*_versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

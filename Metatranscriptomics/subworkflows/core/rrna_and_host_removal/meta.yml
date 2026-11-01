@@ -1,0 +1,57 @@
+name: "rrna_and_host_removal"
+description: Remove ribosomal RNA reads with SortMeRNA and host-derived reads with STAR.
+keywords:
+  - rrna
+  - host
+  - filtering
+  - sortmerna
+  - star
+  - metatranscriptomics
+components:
+  - sortmerna
+  - star
+input:
+  - trimmed_reads_ch:
+      type: tuple
+      description: |
+        Channel containing sample metadata and trimmed paired-end FASTQ reads.
+        Structure: [ val(meta), [ path(read1), path(read2) ] ]
+  - rrna_db_dir_ch:
+      type: directory
+      description: |
+        Directory containing the ribosomal RNA reference database used by SortMeRNA.
+  - rrna_idx_dir_ch:
+      type: directory
+      description: |
+        Directory used for the SortMeRNA index.
+  - star_index_ch:
+      type: directory
+      description: |
+        STAR genome index used for host read removal.
+output:
+  - non_human_reads:
+      type: tuple
+      description: |
+        Channel containing paired-end reads remaining after rRNA and host removal.
+  - sortmerna_log:
+      type: file
+      description: |
+        SortMeRNA execution log.
+      pattern: "*.log"
+  - star_log:
+      type: file
+      description: |
+        STAR execution log.
+      pattern: "*.log"
+  - sortmerna_versions:
+      type: file
+      description: |
+        File containing the SortMeRNA software version.
+      pattern: "*.yml"
+  - star_versions:
+      type: file
+      description: |
+        File containing the STAR software version.
+      pattern: "*.yml"
+authors:
+  - "Gabriela Bonilla"

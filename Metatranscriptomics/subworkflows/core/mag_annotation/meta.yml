@@ -1,0 +1,82 @@
+name: "mag_annotation"
+description: Assign predicted transcripts to metagenome-assembled genomes by aligning TransDecoder proteins against a MAG protein database with DIAMOND.
+keywords:
+  - mag
+  - diamond
+  - transcript
+  - protein
+  - annotation
+  - metatranscriptomics
+components:
+  - prepare_mag_protein_database
+  - diamond
+  - filter_diamond_best_hits
+  - create_transcript_mag_gtf
+input:
+  - pep:
+      type: file
+      description: |
+        Raw protein sequences predicted by TransDecoder and used as DIAMOND queries.
+      pattern: "*.pep"
+  - gff3:
+      type: file
+      description: |
+        TransDecoder GFF3 annotations used to recover transcript and gene relationships.
+      pattern: "*.gff3"
+  - mag_protein_dir_ch:
+      type: directory
+      description: |
+        Directory containing predicted protein FASTA files for the MAG collection.
+output:
+  - transcript_mag_map:
+      type: file
+      description: |
+        Tab-separated mapping between predicted proteins, transcripts, genes and MAG identifiers.
+      pattern: "*_transcript_mag_map.tsv"
+  - transcript_mag_gtf:
+      type: file
+      description: |
+        GTF file containing transcripts assigned to MAGs.
+      pattern: "*_transcript_mag.gtf"
+  - diamond_hits:
+      type: file
+      description: |
+        DIAMOND candidate protein alignments passing the configured search thresholds.
+      pattern: "*_diamond_hits.tsv"
+  - diamond_best_hits:
+      type: file
+      description: |
+        Best DIAMOND alignment selected for each query protein.
+      pattern: "*_diamond_best_hits.tsv"
+  - prepare_versions:
+      type: file
+      description: |
+        File containing software versions from MAG protein database preparation.
+      pattern: "*.yml"
+  - diamond_log:
+      type: file
+      description: |
+        DIAMOND execution log.
+      pattern: "*_diamond.log"
+  - diamond_versions:
+      type: file
+      description: |
+        File containing the DIAMOND software version.
+      pattern: "*.yml"
+  - filter_versions:
+      type: file
+      description: |
+        File containing software versions from best-hit filtering.
+      pattern: "*.yml"
+  - gtf_log:
+      type: file
+      description: |
+        Log generated while creating the transcript-to-MAG mapping and GTF.
+      pattern: "*.log"
+  - gtf_versions:
+      type: file
+      description: |
+        File containing software versions from transcript-to-MAG GTF creation.
+      pattern: "*.yml"
+authors:
+  - "Gabriela Bonilla"

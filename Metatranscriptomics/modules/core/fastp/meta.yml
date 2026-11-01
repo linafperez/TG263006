@@ -1,0 +1,62 @@
+name: fastp
+description: Perform quality filtering and trimming of paired-end sequencing reads
+keywords:
+  - quality control
+  - trimming
+  - filtering
+  - fastq
+  - paired-end
+
+tools:
+  - fastp:
+      description: |
+        fastp performs quality filtering, adapter trimming,
+        poly-G/poly-X trimming, and quality-based read trimming.
+      documentation: https://github.com/OpenGene/fastp
+      licence: ["MIT"]
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information.
+
+  - reads:
+      type: file
+      description: |
+        Pair of input FastQ files corresponding to R1 and R2.
+
+  - outdir_name:
+      type: string
+      description: |
+        Name used to identify the output directory for the fastp results.
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information.
+
+  - reads:
+      type: file
+      description: |
+        Quality-filtered and trimmed paired-end FastQ files.
+      pattern: "*_R[12].trimmed.fastq.gz"
+
+  - html:
+      type: file
+      description: fastp HTML quality report
+      pattern: "*_fastp.html"
+
+  - json:
+      type: file
+      description: fastp JSON quality report
+      pattern: "*_fastp.json"
+
+  - versions:
+      type: file
+      description: File containing the fastp software version
+      pattern: "*_versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

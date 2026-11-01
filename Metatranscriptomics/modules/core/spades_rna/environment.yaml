@@ -1,0 +1,9 @@
+name: spades_rna
+
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+
+dependencies:
+  - spades=4.2.0

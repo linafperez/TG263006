@@ -1,0 +1,42 @@
+name: prepare_mag_protein_database
+description: Concatenate MAG protein FASTA files and build the DIAMOND protein database.
+
+keywords:
+  - MAG
+  - proteins
+  - diamond
+  - database
+  - metatranscriptomics
+
+input:
+  - protein_dir:
+      type: directory
+      description: Directory containing GeneMarkS-2 MAG protein FASTA files.
+
+  - outdir_name:
+      type: string
+      description: Output directory label.
+
+output:
+  - fasta:
+      type: file
+      description: Concatenated MAG protein FASTA.
+      pattern: "MAGs_protein.faa"
+
+  - db:
+      type: file
+      description: DIAMOND protein database.
+      pattern: "MAGs_protein.dmnd"
+
+  - log:
+      type: file
+      description: Database preparation log.
+      pattern: "prepare_mag_protein_database.log"
+
+  - versions:
+      type: file
+      description: Software versions.
+      pattern: "versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

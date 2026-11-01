@@ -1,0 +1,8 @@
+name: filter_transdecoder_complete_isoforms
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11

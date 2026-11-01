@@ -1,0 +1,31 @@
+name: input_preparation
+description: Validate and normalize the metatranscriptomics samplesheet.
+
+keywords:
+  - samplesheet
+  - validation
+  - input preparation
+
+input:
+  - samplesheet:
+      type: file
+      description: Input metatranscriptomics samplesheet.
+
+output:
+  - samplesheet:
+      type: file
+      description: Validated samplesheet.
+      pattern: "samplesheet.valid.csv"
+
+  - check_samplesheet_log:
+      type: file
+      description: Validation log.
+      pattern: "check_samplesheet.log"
+
+  - versions:
+      type: file
+      description: Software versions.
+      pattern: "versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

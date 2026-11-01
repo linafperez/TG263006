@@ -1,0 +1,9 @@
+name: create_transcript_mag_gtf
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11
+

@@ -1,0 +1,30 @@
+name: rnaquast_multiqc
+description: Convert selected rnaQUAST assembly metrics into MultiQC custom-content YAML.
+
+keywords:
+  - rnaquast
+  - multiqc
+  - assembly
+  - quality control
+
+input:
+  - report_dir:
+      type: directory
+      description: rnaQUAST report directory containing short_report.tsv.
+
+  - assembly_id:
+      type: string
+      description: Assembly identifier.
+
+  - outdir_name:
+      type: string
+      description: Output directory label.
+
+output:
+  - yaml:
+      type: file
+      description: MultiQC custom-content table with rnaQUAST assembly metrics.
+      pattern: "*_rnaquast_summary_mqc.yaml"
+
+authors:
+  - "Gabriela Bonilla"

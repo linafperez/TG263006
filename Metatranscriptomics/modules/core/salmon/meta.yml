@@ -1,0 +1,60 @@
+name: salmon
+description: Build a transcriptome index and quantify paired-end metatranscriptomic reads using Salmon
+keywords:
+  - salmon
+  - quantification
+  - transcriptomics
+  - metatranscriptomics
+  - expression
+tools:
+  - salmon:
+      description: |
+        Salmon is a tool for fast and bias-aware quantification of transcript abundance.
+      homepage: https://combine-lab.github.io/salmon/
+      documentation: https://salmon.readthedocs.io/
+      licence: ["GPL-3.0-or-later"]
+
+input:
+  - transcripts:
+      type: file
+      description: |
+        SPAdes metatranscriptomic assembly used as the reference transcriptome.
+      pattern: "*.fasta"
+  - reads:
+      type: file
+      description: |
+        Paired-end non-human metatranscriptomic reads used for quantification.
+      pattern: "*.{fastq,fq,fastq.gz,fq.gz}"
+  - salmon_index:
+      type: directory
+      description: |
+        Salmon index generated from the assembled reference transcriptome.
+
+output:
+  - index:
+      type: directory
+      description: |
+        Salmon index generated from the transcriptome assembly.
+      pattern: "*_salmon_index"
+  - quant:
+      type: file
+      description: |
+        Salmon transcript-level abundance estimates.
+      pattern: "quant.sf"
+  - quant_dir:
+      type: directory
+      description: |
+        Complete Salmon quantification directory for each sample.
+  - log:
+      type: file
+      description: |
+        Salmon execution log.
+      pattern: "*.log"
+  - versions:
+      type: file
+      description: |
+        File containing the Salmon software version.
+      pattern: "*_versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

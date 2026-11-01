@@ -1,0 +1,58 @@
+name: diamond
+description: Align predicted protein sequences against a MAG protein database using DIAMOND BLASTP
+keywords:
+  - diamond
+  - blastp
+  - protein
+  - alignment
+  - mag
+  - metatranscriptomics
+tools:
+  - diamond:
+      description: |
+        DIAMOND is a high-performance sequence aligner for protein and translated DNA searches.
+      homepage: https://github.com/bbuchfink/diamond
+      documentation: https://github.com/bbuchfink/diamond/wiki
+      licence: ["GPL-3.0-or-later"]
+input:
+  - proteins:
+      type: file
+      description: |
+        Predicted protein sequences used as DIAMOND BLASTP queries.
+      pattern: "*.{pep,faa,fa,fasta}"
+  - diamond_db:
+      type: file
+      description: |
+        DIAMOND-formatted protein database used as the search target.
+      pattern: "*.dmnd"
+  - assembly_id:
+      type: string
+      description: |
+        Identifier used to name output files for the assembly.
+  - outdir_name:
+      type: string
+      description: |
+        Name of the results subdirectory where process outputs are published.
+output:
+  - daa:
+      type: file
+      description: |
+        Binary DIAMOND alignment archive.
+      pattern: "*_diamond.daa"
+  - hits:
+      type: file
+      description: |
+        Tab-separated DIAMOND alignments in BLAST tabular format.
+      pattern: "*_diamond_hits.tsv"
+  - log:
+      type: file
+      description: |
+        DIAMOND execution log.
+      pattern: "*_diamond.log"
+  - versions:
+      type: file
+      description: |
+        File containing the DIAMOND software version.
+      pattern: "*_versions.yml"
+authors:
+  - "Gabriela Bonilla"

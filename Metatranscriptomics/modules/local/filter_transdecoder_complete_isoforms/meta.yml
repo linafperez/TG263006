@@ -1,0 +1,62 @@
+name: filter_transdecoder_complete_isoforms
+description: Retain complete TransDecoder ORFs together with their matching CDS and GFF3 hierarchy.
+
+keywords:
+  - transdecoder
+  - ORF
+  - CDS
+  - complete isoforms
+  - metatranscriptomics
+
+input:
+  - pep:
+      type: file
+      description: Predicted TransDecoder peptide FASTA.
+      pattern: "*.transdecoder.pep"
+
+  - cds:
+      type: file
+      description: Predicted TransDecoder CDS FASTA.
+      pattern: "*.transdecoder.cds"
+
+  - gff3:
+      type: file
+      description: TransDecoder GFF3 annotation.
+      pattern: "*.transdecoder.gff3"
+
+  - assembly_id:
+      type: string
+      description: Assembly identifier.
+
+  - outdir_name:
+      type: string
+      description: Output directory label.
+
+output:
+  - pep:
+      type: file
+      description: Complete-ORF peptide FASTA.
+      pattern: "*.complete.transdecoder.pep"
+
+  - cds:
+      type: file
+      description: Complete-ORF CDS FASTA.
+      pattern: "*.complete.transdecoder.cds"
+
+  - gff3:
+      type: file
+      description: GFF3 hierarchy associated with retained complete ORFs.
+      pattern: "*.complete.transdecoder.gff3"
+
+  - log:
+      type: file
+      description: Complete-ORF filtering log.
+      pattern: "*_filter_transdecoder_complete_isoforms.log"
+
+  - versions:
+      type: file
+      description: Software versions.
+      pattern: "*_versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

@@ -1,0 +1,51 @@
+name: "quantification"
+description: Quantify metatranscriptomic reads against the SPAdes transcriptome assembly using Salmon.
+keywords:
+  - salmon
+  - quantification
+  - metatranscriptomics
+  - transcript
+  - expression
+
+components:
+  - salmon
+
+input:
+  - transcripts:
+      type: file
+      description: |
+        SPAdes metatranscriptomic assembly used as the Salmon reference transcriptome.
+      pattern: "*.fasta"
+  - non_human_reads_ch:
+      type: tuple
+      description: |
+        Channel containing sample metadata and paired-end reads remaining after host removal.
+
+output:
+  - quant_dirs:
+      type: directory
+      description: |
+        Collected per-sample Salmon quantification directories.
+  - quant:
+      type: tuple
+      description: |
+        Per-sample transcript-level Salmon quantification files.
+  - salmon_index_log:
+      type: file
+      description: |
+        Salmon index generation log.
+  - salmon_quant_log:
+      type: file
+      description: |
+        Per-sample Salmon quantification logs.
+  - salmon_index_versions:
+      type: file
+      description: |
+        Salmon version information from index generation.
+  - salmon_quant_versions:
+      type: file
+      description: |
+        Salmon version information from quantification.
+
+authors:
+  - "Gabriela Bonilla"

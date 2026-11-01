@@ -1,0 +1,68 @@
+name: sortmerna
+description: Remove ribosomal RNA from paired-end metatranscriptomic sequencing reads
+keywords:
+  - metatranscriptomics
+  - ribosomal RNA
+  - rRNA removal
+  - filtering
+  - paired-end
+
+tools:
+  - sortmerna:
+      description: |
+        SortMeRNA filters ribosomal RNA sequences from sequencing reads
+        using reference rRNA databases.
+      documentation: https://github.com/sortmerna/sortmerna
+      licence: ["GPL-3.0-or-later"]
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information.
+
+  - reads:
+      type: file
+      description: |
+        Pair of input FastQ files corresponding to R1 and R2.
+
+  - rrna_db_dir:
+      type: directory
+      description: |
+        Directory containing the SortMeRNA rRNA reference databases.
+
+  - outdir_name:
+      type: string
+      description: |
+        Name used to identify the output directory for the SortMeRNA results.
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information.
+
+  - reads:
+      type: file
+      description: |
+        Paired-end non-rRNA reads retained for downstream analysis.
+      pattern: "*_non_rRNA_R[12].fastq.gz"
+
+  - rrna:
+      type: file
+      description: |
+        Paired-end reads classified as ribosomal RNA.
+      pattern: "*_rRNA_R[12].fastq.gz"
+
+  - log:
+      type: file
+      description: SortMeRNA execution log
+      pattern: "*_sortmerna.log"
+
+  - versions:
+      type: file
+      description: File containing the SortMeRNA software version
+      pattern: "*_versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

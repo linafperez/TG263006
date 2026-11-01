@@ -1,0 +1,54 @@
+name: fastqc
+description: Run FastQC on paired-end sequencing reads
+keywords:
+  - quality control
+  - qc
+  - fastq
+  - paired-end
+tools:
+  - fastqc:
+      description: |
+        FastQC provides general quality control metrics for raw and processed sequencing reads.
+      documentation: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/
+      licence: ["GPL-3.0-or-later"]
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information.
+
+  - reads:
+      type: file
+      description: |
+        Pair of input FastQ files corresponding to R1 and R2.
+
+  - outdir_name:
+      type: string
+      description: |
+        Name used to distinguish the FastQC analysis stage,
+        e.g. fastqc_raw or fastqc_clean.
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information.
+
+  - html:
+      type: file
+      description: FastQC HTML reports for R1 and R2
+      pattern: "*_fastqc.html"
+
+  - zip:
+      type: file
+      description: FastQC zip archives containing data and plots for R1 and R2
+      pattern: "*_fastqc.zip"
+
+  - versions:
+      type: file
+      description: File containing the FastQC software version
+      pattern: "*_versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

@@ -1,0 +1,81 @@
+name: run_expression_analysis
+description: Run gene-level tximport and PD-versus-HC differential expression analysis.
+
+keywords:
+  - tximport
+  - DESeq2
+  - differential expression
+  - metatranscriptomics
+
+input:
+  - salmon_quant_dirs_ch:
+      type: directory
+      description: Salmon quantification directories.
+
+  - transcript_mag_map:
+      type: file
+      description: Transcript-to-MAG gene mapping.
+
+  - samplesheet_ch:
+      type: file
+      description: Validated samplesheet containing PD and HC conditions.
+
+output:
+  - summary:
+      type: file
+      description: Expression-analysis summary.
+
+  - counts:
+      type: file
+      description: Gene-level count matrix.
+
+  - tpm:
+      type: file
+      description: Gene-level abundance matrix.
+
+  - deseq2_results:
+      type: file
+      description: Shrunken DESeq2 results.
+
+  - mag_mapped_results:
+      type: file
+      description: DESeq2 results mapped to MAG genes.
+
+  - significant_results:
+      type: file
+      description: Significant MAG-mapped genes.
+
+  - mag_summary:
+      type: file
+      description: Per-MAG expression summary.
+
+  - pca:
+      type: file
+      description: PCA plot.
+
+  - distance_heatmap:
+      type: file
+      description: Sample-distance heatmap.
+
+  - dispersion:
+      type: file
+      description: Dispersion plot.
+
+  - deg_heatmap:
+      type: file
+      description: DEG heatmap.
+
+  - volcano:
+      type: file
+      description: Volcano plot.
+
+  - ma_plot:
+      type: file
+      description: MA plots.
+
+  - versions:
+      type: file
+      description: Software versions.
+
+authors:
+  - "Gabriela Bonilla"

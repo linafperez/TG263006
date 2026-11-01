@@ -1,0 +1,23 @@
+name: expression_analysis
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - poppler
+  - r-base=4.5
+
+  - bioconductor-deseq2=1.50.2
+  - bioconductor-tximport=1.38.2
+  - bioconductor-apeglm=1.32.0
+  - bioconductor-biocparallel
+  - bioconductor-pcatools
+
+  - r-tidyverse
+  - r-rcolorbrewer
+  - r-statmod
+  - r-ggplot2
+  - r-ggrepel
+  - r-pheatmap
+  - r-readr

@@ -1,0 +1,156 @@
+name: expression_analysis
+description: Perform tximport aggregation, DESeq2 PD-versus-HC analysis and expression-level reporting.
+
+keywords:
+  - tximport
+  - DESeq2
+  - differential expression
+  - Parkinson
+  - metatranscriptomics
+
+tools:
+  - tximport:
+      description: Import transcript-level Salmon estimates into R.
+
+  - deseq2:
+      description: Differential expression analysis using negative-binomial models.
+
+input:
+  - salmon_quant_dirs:
+      type: directory
+      description: Salmon quantification directories for all samples.
+
+  - transcript_mag_map:
+      type: file
+      description: Mapping from transcript ORFs to MAG-specific genes.
+      pattern: "*_transcript_mag_map.tsv"
+
+  - samplesheet:
+      type: file
+      description: Validated samplesheet containing sample_id and condition.
+      pattern: "samplesheet.valid.csv"
+
+  - condition_column:
+      type: string
+      description: Samplesheet column defining experimental group.
+
+  - case_label:
+      type: string
+      description: Case condition label.
+
+  - control_label:
+      type: string
+      description: Control condition label.
+
+  - outdir_name:
+      type: string
+      description: Output directory label.
+
+output:
+  - salmon_dirs:
+      type: file
+      description: List of Salmon quantification directories.
+      pattern: "salmon_dirs.txt"
+
+  - tximport_rds:
+      type: file
+      description: tximport object.
+      pattern: "tximport_results.rds"
+
+  - counts:
+      type: file
+      description: Gene-level length-scaled count matrix.
+      pattern: "tximport_counts.tsv"
+
+  - tpm:
+      type: file
+      description: Gene-level abundance matrix.
+      pattern: "tximport_tpm.tsv"
+
+  - length:
+      type: file
+      description: Effective-length matrix.
+      pattern: "tximport_length.tsv"
+
+  - deseq2_rds:
+      type: file
+      description: DESeq2 dataset.
+      pattern: "deseq2_dataset.rds"
+
+  - deseq2_results:
+      type: file
+      description: apeglm-shrunken PD-versus-HC DESeq2 results.
+      pattern: "deseq2_pd_vs_hc.tsv"
+
+  - deseq2_unshrunken:
+      type: file
+      description: Unshrunken DESeq2 results.
+      pattern: "deseq2_pd_vs_hc_unshrunken.tsv"
+
+  - qc_summary:
+      type: file
+      description: Per-sample expression-analysis QC summary.
+      pattern: "deseq2_qc_summary.tsv"
+
+  - vst_counts:
+      type: file
+      description: Variance-stabilized expression matrix.
+      pattern: "vst_counts.tsv"
+
+  - mag_mapped_results:
+      type: file
+      description: DESeq2 results joined to MAG gene mappings.
+      pattern: "deseq2_mag_mapped_results.tsv"
+
+  - significant_results:
+      type: file
+      description: Significant MAG-mapped genes passing the configured thresholds.
+      pattern: "deseq2_significant_results.tsv"
+
+  - summary:
+      type: file
+      description: Differential-expression summary metrics.
+      pattern: "expression_summary.tsv"
+
+  - mag_summary:
+      type: file
+      description: Per-MAG expression summary.
+      pattern: "mag_expression_summary.tsv"
+
+  - pca:
+      type: file
+      description: PCA plot.
+      pattern: "pca_plot.pdf"
+
+  - distance_heatmap:
+      type: file
+      description: Sample-distance heatmap.
+      pattern: "sample_distance_heatmap.pdf"
+
+  - dispersion:
+      type: file
+      description: DESeq2 dispersion plot.
+      pattern: "dispersion_plot.pdf"
+
+  - deg_heatmap:
+      type: file
+      description: Differentially expressed gene heatmap.
+      pattern: "deg_heatmap.pdf"
+
+  - ma_plot:
+      type: file
+      description: Unshrunken and shrunken MA plots.
+      pattern: "ma_plot.pdf"
+
+  - volcano:
+      type: file
+      description: Volcano plot.
+      pattern: "volcano_plot.pdf"
+
+  - versions:
+      type: file
+      description: R and package versions.
+      pattern: "expression_analysis_versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

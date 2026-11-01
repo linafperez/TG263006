@@ -1,0 +1,37 @@
+name: filter_diamond_best_hits
+description: Apply MAG-mapping thresholds and retain one deterministic best DIAMOND hit per query.
+
+keywords:
+  - diamond
+  - blastp
+  - MAG
+  - best hit
+  - metatranscriptomics
+
+input:
+  - diamond_hits:
+      type: file
+      description: Tabular DIAMOND protein-alignment results.
+      pattern: "*_diamond_hits.tsv"
+
+  - assembly_id:
+      type: string
+      description: Assembly identifier.
+
+  - outdir_name:
+      type: string
+      description: Output directory label.
+
+output:
+  - best_hits:
+      type: file
+      description: Filtered best MAG hit for each qualifying query.
+      pattern: "*_diamond_best_hits.tsv"
+
+  - versions:
+      type: file
+      description: Software versions.
+      pattern: "*_filter_diamond_best_hits_versions.yml"
+
+authors:
+  - "Gabriela Bonilla"

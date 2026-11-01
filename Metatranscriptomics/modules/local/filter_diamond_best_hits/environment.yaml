@@ -1,0 +1,7 @@
+name: filter_diamond_best_hits
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11

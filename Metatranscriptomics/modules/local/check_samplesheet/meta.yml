@@ -1,0 +1,32 @@
+name: check_samplesheet
+description: Validate the metatranscriptomics samplesheet before pipeline execution.
+
+keywords:
+  - samplesheet
+  - validation
+  - metatranscriptomics
+
+input:
+  - samplesheet:
+      type: file
+      description: CSV containing sample identifiers, condition, SRA identifier and paired FASTQ paths.
+      pattern: "*.csv"
+
+output:
+  - samplesheet:
+      type: file
+      description: Validated and normalized samplesheet.
+      pattern: "samplesheet.valid.csv"
+
+  - log:
+      type: file
+      description: Samplesheet validation log.
+      pattern: "check_samplesheet.log"
+
+  - versions:
+      type: file
+      description: Software versions.
+      pattern: "versions.yml"
+
+authors:
+  - "Gabriela Bonilla"
