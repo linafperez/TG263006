@@ -4,7 +4,7 @@ Pipeline metatranscriptómico modular implementado en **Nextflow** para caracter
 
 ## Esquema general
 
-![Esquema general del pipeline metatranscriptómico](./diagrama_metatranscriptomica.pdf)
+[`Diagrama general metatranscriptomica.pdf`](./diagrama_metatranscriptomica.pdf)
 
 El flujo comprende las etapas de **preprocesamiento**, **remoción de secuencias no deseadas**, **ensamblaje y predicción de transcritos**, **asignación a MAGs y cuantificación**, **expresión diferencial** y **control de calidad global**.
 
@@ -250,7 +250,7 @@ Antes de la ejecución deben estar disponibles las lecturas, referencias y anota
 
 El flujo completo, incluyendo decisiones internas, filtros, criterios de selección y salidas intermedias, se encuentra en:
 
-[`Anexo_Metatranscriptomica.pdf`](./Anexo_Metatranscriptomica.pdf)
+[`Flujo completo de metatranscriptomica.pdf`](./Anexo_Metatranscriptomica.pdf)
 
 ## Relación con otros módulos
 
