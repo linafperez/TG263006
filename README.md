@@ -25,7 +25,3 @@ Cada módulo contiene su propio `README.md` con información sobre:
 - ejecución;
 - parámetros principales;
 - resultados generados.
-
-## Objetivo general
-
-Desarrollar una arquitectura computacional de integración multiómica para identificar rutas funcionales **microbio–gen–metabolito** asociadas a la enfermedad de Parkinson.
