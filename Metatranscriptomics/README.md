@@ -205,25 +205,25 @@ data/
 
 El pipeline genera:
 
-- reportes FastQC de lecturas raw y procesadas;
-- reportes de filtrado de fastp;
-- logs de SortMeRNA;
-- métricas de alineamiento de STAR;
-- transcritos ensamblados mediante rnaSPAdes;
-- reportes de evaluación del ensamblaje mediante rnaQUAST;
-- ORFs y CDS predichos mediante TransDecoder;
-- asociaciones entre ORFs y MAGs generadas con DIAMOND;
-- cuantificaciones por muestra mediante Salmon;
-- matrices de expresión a nivel de genes;
-- resultados de expresión diferencial entre PD y HC;
+- reportes FastQC de lecturas raw y procesadas.
+- reportes de filtrado de fastp.
+- logs de SortMeRNA.
+- métricas de alineamiento de STAR.
+- transcritos ensamblados mediante rnaSPAdes.
+- reportes de evaluación del ensamblaje mediante rnaQUAST.
+- ORFs y CDS predichos mediante TransDecoder.
+- asociaciones entre ORFs y MAGs generadas con DIAMOND.
+- cuantificaciones por muestra mediante Salmon.
+- matrices de expresión a nivel de genes.
+- resultados de expresión diferencial entre PD y HC.
 - reporte integrado de calidad y resultados mediante MultiQC.
 
 ## Resultados obtenidos
 
 La aplicación del pipeline a las 95 muestras permitió identificar:
 
-- **517 genes codificados por MAGs con expresión diferencial**;
-- **480 genes con mayor expresión en PD**;
+- **517 genes codificados por MAGs con expresión diferencial**.
+- **480 genes con mayor expresión en PD**.
 - **37 genes con mayor expresión en HC**.
 
 Estos resultados son utilizados posteriormente en la etapa de integración multiómica para relacionar actividad génica, MAGs, funciones biológicas y metabolitos.
