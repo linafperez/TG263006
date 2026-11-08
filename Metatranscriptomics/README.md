@@ -230,21 +230,35 @@ Estos resultados son utilizados posteriormente en la etapa de integración multi
 
 ## Ejecución
 
-La ejecución del pipeline se realiza mediante:
+La ejecución del pipeline se gestiona mediante:
 
 [`metatranscriptomics_pipeline.sh`](https://github.com/linafperez/TG263006/blob/main/Metatranscriptomics/metatranscriptomics_pipeline.sh)
 
-Desde el directorio `Metatranscriptomics/`:
+Este script actúa como punto de entrada para enviar el workflow al planificador **SLURM** mediante `sbatch` y ejecutar Nextflow utilizando los perfiles `slurm` y `singularity`.
+
+Desde el directorio `Metatranscriptomics/`, se encuentran disponibles tres modos de ejecución:
 
 ```bash
-bash metatranscriptomics_pipeline.sh
+./metatranscriptomics_pipeline.sh stub
 ```
 
-Este script centraliza la ejecución del flujo metatranscriptómico y las configuraciones necesarias para correr el análisis con **Nextflow**.
+Ejecuta una validación aislada del pipeline utilizando el entorno de prueba.
 
-El workflow fue implementado utilizando **Nextflow v26.04.6** y ejecutado en infraestructura HPC con **SLURM**.
+```bash
+./metatranscriptomics_pipeline.sh real
+```
 
-Antes de la ejecución deben estar disponibles las lecturas, referencias y anotaciones descritas en la sección **Entradas**, respetando la estructura de directorios esperada.
+Envía una ejecución completa sobre las 95 muestras.
+
+```bash
+./metatranscriptomics_pipeline.sh resume
+```
+
+Reanuda una ejecución productiva interrumpida utilizando la opción `-resume` de Nextflow.
+
+El script envía los trabajos al clúster mediante `sbatch` y configura automáticamente los parámetros principales de SLURM, el entorno de Singularity y la ejecución de `main.nf`.
+
+Antes de ejecutar el pipeline deben estar disponibles las lecturas, referencias y anotaciones descritas en la sección **Entradas**, respetando la estructura de directorios esperada.
 
 ## Documentación detallada
 
