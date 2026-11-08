@@ -22,9 +22,9 @@ La ejecución completa del módulo requirió aproximadamente **10 min 51 s**, co
 
 El módulo utiliza como entradas principales:
 
-- **MAGs** obtenidos mediante el análisis metagenómico;
-- **ASVs y asignaciones taxonómicas** provenientes del análisis 16S rRNA;
-- **genes diferencialmente expresados asociados a MAGs** obtenidos mediante metatranscriptómica;
+- **MAGs** obtenidos mediante el análisis metagenómico.
+- **ASVs y asignaciones taxonómicas** provenientes del análisis 16S rRNA.
+- **genes diferencialmente expresados asociados a MAGs** obtenidos mediante metatranscriptómica.
 - **metabolitos diferenciales** identificados mediante el análisis metabolómico.
 
 ## Integración taxonómica
@@ -37,8 +37,8 @@ La concordancia se establece principalmente a nivel de **género**, permitiendo 
 
 Los microorganismos identificados se relacionan posteriormente con:
 
-- genes diferencialmente expresados;
-- funciones y rutas biológicas;
+- genes diferencialmente expresados.
+- funciones y rutas biológicas.
 - metabolitos diferenciales.
 
 Esto permite construir asociaciones funcionales del tipo:
@@ -51,11 +51,11 @@ Microorganismo → Gen → Función/Ruta → Metabolito
 
 El módulo genera:
 
-- correspondencias taxonómicas entre MAGs y ASVs;
-- asociaciones entre microorganismos y genes diferencialmente expresados;
-- relaciones funcionales entre genes, rutas y metabolitos;
-- matrices de correlación para PD y HC;
-- enriquecimiento KEGG y GO;
+- correspondencias taxonómicas entre MAGs y ASVs.
+- asociaciones entre microorganismos y genes diferencialmente expresados.
+- relaciones funcionales entre genes, rutas y metabolitos.
+- matrices de correlación para PD y HC.
+- enriquecimiento KEGG y GO.
 - diagramas de integración multiómica.
 
 ## Resultados obtenidos
