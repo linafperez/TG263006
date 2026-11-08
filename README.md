@@ -10,18 +10,17 @@ Desarrollar una arquitectura computacional de integración multiómica para iden
 
 | Módulo | Descripción |
 |---|---|
-| [Aleatorización mendeliana](./MR) | Evaluación de asociaciones potencialmente causales entre taxones intestinales y enfermedad de Parkinson mediante datos GWAS. |
-| [Metagenómica](./Metagenomics) | Procesamiento de datos shotgun, ensamblaje, binning, reconstrucción y caracterización de MAGs. |
-| [Metatranscriptómica](./Metatranscriptomics) | Procesamiento de RNA, identificación de transcritos y análisis de expresión diferencial asociado a MAGs. |
-| [16S rRNA](./16S) | Procesamiento de amplicones, generación de ASVs, asignación taxonómica y análisis de diversidad. |
-| [Metabolómica](./Metabolomics) | Procesamiento y análisis estadístico para la identificación de metabolitos diferenciales. |
-| [Integración multiómica](./Integration) | Integración taxonómica MAG–ASV y análisis funcional microbio–gen–metabolito. |
+| [Aleatorización mendeliana](./MR/README.md) | Evaluación de posibles relaciones causales entre taxones intestinales y Parkinson mediante datos GWAS. |
+| [Metagenómica](./Metagenomics/README.md) | Procesamiento de lecturas shotgun para reconstruir MAGs de alta calidad y caracterizarlos taxonómica y funcionalmente. |
+| [Metatranscriptómica](./Metatranscriptomics/README.md) | Procesamiento de RNA para identificar transcritos, asociarlos con MAGs y evaluar expresión diferencial. |
+| [16S rRNA](./16S/README.md) | Procesamiento de amplicones para generar ASVs, asignar taxonomía y comparar la composición microbiana. |
+| [Metabolómica](./Metabolomics/README.md) | Análisis de perfiles metabolómicos para identificar metabolitos diferenciales asociados con Parkinson. |
+| [Integración multiómica](./Integration/README.md) | Integración de MAGs, ASVs, genes, rutas y metabolitos para identificar asociaciones funcionales. |
 
-Cada módulo contiene su propio `README.md` con información sobre:
+Cada módulo incluye su propio `README.md`, donde se documentan los elementos necesarios para comprender y reproducir el análisis, incluyendo:
 
-- estructura de archivos;
-- datos de entrada;
-- herramientas utilizadas;
-- ejecución;
-- parámetros principales;
-- resultados generados.
+- la organización y estructura del módulo;
+- los datos y archivos de entrada requeridos;
+- las herramientas y versiones utilizadas;
+- el procedimiento de ejecución;
+- las salidas y resultados generados.
