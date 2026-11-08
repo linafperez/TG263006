@@ -4,6 +4,8 @@ Módulo de integración multiómica desarrollado para relacionar la composición
 
 ## Esquema general
 
+[`Diagrama general de integración multiómica.pdf`](./diagrama_integracion.pdf)
+
 El análisis integra resultados provenientes de los módulos de **metagenómica, 16S rRNA, metatranscriptómica y metabolómica**, con el fin de identificar asociaciones entre microorganismos, genes, funciones biológicas y metabolitos.
 
 ## Software y requerimientos computacionales
@@ -53,12 +55,10 @@ El módulo genera:
 - asociaciones entre microorganismos y genes diferencialmente expresados;
 - relaciones funcionales entre genes, rutas y metabolitos;
 - matrices de correlación para PD y HC;
-- valores de Δρ y resultados de las pruebas por permutación;
-- redes y diagramas de integración multiómica.
+- enriquecimiento KEGG y GO;
+- diagramas de integración multiómica.
 
 ## Resultados obtenidos
-
-La integración permitió identificar asociaciones específicas de cada condición entre microorganismos, actividad funcional y metabolitos.
 
 En el grupo PD se identificaron relaciones que involucraron microorganismos como **Parabacteroides goldsteinii** y diferentes clases de lípidos, mientras que en HC se observaron asociaciones relacionadas con **Roseburia intestinalis** y metabolitos como esteroles.
 
@@ -70,13 +70,19 @@ El análisis de integración se desarrolla en **R / R Markdown**, utilizando com
 
 Los scripts deben ejecutarse una vez se encuentren disponibles los resultados finales de metagenómica, 16S rRNA, metatranscriptómica y metabolómica.
 
+## Documentación detallada
+
+El flujo completo de integración, incluyendo las relaciones entre las distintas capas ómicas, criterios de asociación y etapas internas del análisis, se encuentra en:
+
+[`Flujo completo de integración multiómica.pdf`](./Anexo_Integracion.pdf)
+
 ## Relación con otros módulos
 
 Este módulo integra los resultados generados en:
 
-- [`../Metagenomics`](../Metagenomics)
-- [`../16S`](../16S)
-- [`../Metatranscriptomics`](../Metatranscriptomics)
-- [`../Metabolomics`](../Metabolomics)
+- [`../Metagenomics`](https://github.com/linafperez/TG263006/blob/main/Metagenomics)
+- [`../16S`](https://github.com/linafperez/TG263006/blob/main/16S)
+- [`../Metatranscriptomics`](https://github.com/linafperez/TG263006/blob/main/Metatranscriptomics)
+- [`../Metabolomics`](https://github.com/linafperez/TG263006/blob/main/Metabolomics)
 
 y constituye la etapa final de integración de la arquitectura computacional multiómica.
