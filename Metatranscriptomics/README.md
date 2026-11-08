@@ -256,8 +256,6 @@ Envía una ejecución completa sobre las 95 muestras.
 
 Reanuda una ejecución productiva interrumpida utilizando la opción `-resume` de Nextflow.
 
-El script envía los trabajos al clúster mediante `sbatch` y configura automáticamente los parámetros principales de SLURM, el entorno de Singularity y la ejecución de `main.nf`.
-
 Antes de ejecutar el pipeline deben estar disponibles las lecturas, referencias y anotaciones descritas en la sección **Entradas**, respetando la estructura de directorios esperada.
 
 ## Documentación detallada
