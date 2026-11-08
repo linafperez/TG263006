@@ -19,8 +19,8 @@ Desarrollar una arquitectura computacional de integración multiómica para iden
 
 Cada módulo incluye su propio `README.md`, donde se documentan los elementos necesarios para comprender y reproducir el análisis, incluyendo:
 
-- la organización y estructura del módulo;
-- los datos y archivos de entrada requeridos;
-- las herramientas y versiones utilizadas;
-- el procedimiento de ejecución;
+- la organización y la estructura del módulo.
+- los datos y archivos de entrada requeridos.
+- las herramientas y versiones utilizadas.
+- el procedimiento de ejecución.
 - las salidas y resultados generados.
