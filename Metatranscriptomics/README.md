@@ -34,12 +34,12 @@ La ejecución completa del pipeline sobre las 95 muestras requirió aproximadame
 
 | Característica | Descripción |
 |---|---|
-| BioProject | PRJNA782492 |
+| BioProject | [PRJNA782492](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA782492) |
 | Muestras | 95 |
 | Parkinson (PD) | 46 |
 | Controles (HC) | 49 |
 | Tipo de datos | RNA-seq paired-end |
-| Fuente original | Sequence Read Archive (SRA) |
+| Publicación de referencia | [Villette et al. (2025)](https://doi.org/10.1038/s41522-025-00780-0) |
 
 ## Entradas
 
