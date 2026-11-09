@@ -40,18 +40,21 @@ Los siguientes valores corresponden al consumo observado durante la ejecución d
 
 La ejecución completa del pipeline sobre las 95 muestras requirió aproximadamente **12 días, 5 horas y 43 minutos**. Las etapas con mayor demanda de memoria RAM fueron **metaSPAdes**, **SemiBin2** y **COMEBin**, por lo que se recomienda el uso de infraestructura HPC. 
 
+
 ## Dataset
 
 | Característica | Descripción |
 |---|---|
-| BioProject | PRJNA782492 |
+| BioProject | [PRJNA782492](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA782492) |
 | Muestras | 95 |
 | Parkinson (PD) | 46 |
 | Controles (HC) | 49 |
 | Tipo de datos | Secuenciación metagenómica shotgun paired-end |
-| Fuente original | Sequence Read Archive (SRA) |
+| Fuente original | [Sequence Read Archive (SRA)](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA782492) |
+| Publicación de referencia | [Villette et al. (2025)](https://doi.org/10.1038/s41522-025-00780-0) |
 
 El manifiesto utiliza `CT` para identificar los controles, equivalente al grupo HC.
+
 
 ## Entradas
 
