@@ -22,17 +22,20 @@ El análisis comprende la **preparación de exposición y desenlace**, **selecci
 | ggplot2 | Generación y exportación de gráficos |
 | forestploter | Visualización de estimaciones mediante forest plots |
 
+
+
 ## Fuentes de datos
 
 El análisis utiliza estadísticas resumidas de fuentes GWAS independientes para la exposición y el desenlace.
 
 | Componente | Fuente | Información |
 |---|---|---|
-| Exposición: microbioma intestinal | Consorcio MiBioGen | Asociaciones entre variantes humanas y abundancia relativa de 211 taxones; 18.340 participantes de 24 cohortes |
-| Desenlace: Parkinson en EUR | Archivos identificados como GP2 y FinnGen | Asociaciones genéticas con Parkinson en poblaciones europeas |
-| Desenlace: Parkinson en LATAM | GWAS latinoamericano | Asociaciones genéticas con Parkinson en población latinoamericana |
+| Exposición: microbioma intestinal | Consorcio MiBioGen ([Kurilshikov et al., 2021](https://doi.org/10.1038/s41588-020-00763-1)) | Asociaciones entre variantes humanas y abundancia relativa de 211 taxones; 18 340 participantes de 24 cohortes |
+| Desenlace: Parkinson en EUR | Global Parkinson's Genetics Program, GP2 ([Leonard et al., 2025](https://doi.org/10.1101/2025.03.14.24319455)) | Asociaciones genéticas con Parkinson en poblaciones europeas |
+| Desenlace: Parkinson en EUR | FinnGen ([Kurki et al., 2023](https://doi.org/10.1038/s41586-022-05473-8)) | Asociaciones genéticas con Parkinson en población finlandesa |
+| Desenlace: Parkinson en LATAM | GWAS latinoamericano (publicación de origen pendiente de verificar) | Asociaciones genéticas con Parkinson en población latinoamericana |
 
-El trabajo de grado también referencia el metaanálisis de **IPDGC (Nalls et al., 2019)** como fuente del desenlace; los scripts utilizan los tres archivos descritos a continuación.
+Los scripts utilizan los archivos de exposición de MiBioGen y tres archivos de desenlace identificados como GP2, FinnGen y GWAS latinoamericano. Las referencias bibliográficas corresponden a las fuentes identificadas, aunque la versión específica de cada conjunto de estadísticas resumidas no se encuentra documentada en el código.
 
 ## Entradas
 
@@ -60,7 +63,7 @@ Estos contienen las asociaciones entre SNPs y Parkinson, incluyendo beta, error 
 
 ### 3. Paneles de referencia genética
 
-PLINK2 utiliza paneles externos de **1000 Genomas** con archivos `.pgen`, `.pvar` y `.psam`, organizados bajo el directorio `Genotype/` de cada fuente:
+PLINK2 utiliza paneles externos del **Proyecto 1000 Genomas** ([The 1000 Genomes Project Consortium, 2015](https://doi.org/10.1038/nature15393)) con archivos `.pgen`, `.pvar` y `.psam`, organizados bajo el directorio `Genotype/` de cada fuente:
 
 ```text
 Genotype/<población>/1KG_<población>.pgen
@@ -79,10 +82,10 @@ Ambas fuentes se procesan por separado mediante **data.table** y **tidyverse**. 
 La selección aplica los siguientes criterios:
 
 - **Significancia:** p < 1 × 10⁻⁵.
-- **Desequilibrio de ligamiento:** r² < 0,001, con una ventana de 10.000 kb.
+- **Desequilibrio de ligamiento:** r² < 0.001, con una ventana de 10 000 kb.
 - **Variantes palindrómicas:** exclusión de pares A/T y C/G, en ambas orientaciones.
 - **Fortaleza de instrumentos:** F ≥ 10, calculada como F = (β/SE)².
-- **Frecuencia en el desenlace:** EAF disponible y superior a 0,01.
+- **Frecuencia en el desenlace:** EAF disponible y superior a 0.01.
 
 Estos criterios seleccionan variantes asociadas, reducen la redundancia genética y descartan instrumentos débiles o con ambigüedad alélica. El código aplica los filtros de significancia, LD y F por separado a exposición y desenlace.
 
@@ -92,10 +95,10 @@ La armonización alinea los alelos de efecto entre ambas fuentes. `MR.Rmd` requi
 
 Las estimaciones se realizan mediante **TwoSampleMR**, utilizando cuatro métodos:
 
-- varianza inversa ponderada (**IVW**).
-- mediana ponderada.
-- moda ponderada.
-- razón de Wald, cuando se dispone de un único SNP.
+- Varianza inversa ponderada (**IVW**).
+- Mediana ponderada.
+- Moda ponderada.
+- Razón de Wald, cuando se dispone de un único SNP.
 
 Los efectos se expresan como **odds ratios (OR)** e **intervalos de confianza del 95 %**, mediante `generate_odds_ratios()`.
 
@@ -105,8 +108,9 @@ La robustez de las estimaciones se examina mediante:
 
 - **Q de Cochran:** evaluación de heterogeneidad entre instrumentos.
 - **MR-Egger:** evaluación de pleiotropía horizontal direccional mediante el intercepto.
-- **MR-PRESSO:** identificación de variantes atípicas, con **1.000 simulaciones** y umbral de significancia de **0,05**.
+- **MR-PRESSO:** identificación de variantes atípicas, con **1 000 simulaciones** y umbral de significancia de **0.05**.
 - **Leave-one-out:** evaluación de la influencia de cada SNP al excluirlo individualmente.
+
 
 ## Salidas principales
 
