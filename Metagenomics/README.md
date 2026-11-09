@@ -10,38 +10,35 @@ El flujo comprende las etapas de **obtención de lecturas**, **preprocesamiento 
 
 ## Software y requerimientos computacionales
 
-Los valores corresponden a **solicitudes por tarea** de [`conf/resources.config`](./conf/resources.config), con versiones fijadas en los módulos; no son consumos observados para 95 muestras. **N/D** indica ausencia de mediciones verificables. Las asignaciones históricas de [`docs/original_resource_mapping.tsv`](./docs/original_resource_mapping.tsv) tampoco constituyen mediciones.
+Los siguientes valores reproducen los requerimientos y el consumo computacional estimados para **95 muestras**, presentados en la Tabla 2 del trabajo de grado.
 
 | Software y versión | Módulo / etapa | CPU | RAM asignada (GB) | RAM pico (GB) | Almacenamiento | Tiempo |
 |---|---|---:|---:|---:|---:|---:|
-| SRA Toolkit v3.4.1 | Adquisición por corrida SRA | 12 | 19 | N/D | N/D | N/D |
-| pigz v2.8 | Compresión dentro de la misma tarea SRA | 12 | 19 | N/D | N/D | N/D |
-| FastQC v0.12.1 | Control de calidad raw y clean | 4 | 19 | N/D | N/D | N/D |
-| fastp v1.0.1 | Filtrado y trimming | 16 | 19 | N/D | N/D | N/D |
-| Bowtie2 v2.5.4 | Remoción de lecturas humanas | 24 | 19 | N/D | N/D | N/D |
-| MEGAHIT v1.2.9 | Coensamblaje global | 32 | 500 | N/D | N/D | N/D |
-| metaSPAdes v4.2.0 | Coensamblaje global o por condición | 32 | 1800 | N/D | N/D | N/D |
-| MetaQUAST v5.3.0 | Evaluación de ambos ensamblajes | 6 | 20 | N/D | N/D | N/D |
-| CoverM v0.7.0 | Cobertura de contigs | 24 | 100 | N/D | N/D | N/D |
-| COMEBin v1.0.4 | Binning | 32 | 100 | N/D | N/D | N/D |
-| SemiBin2 v1.5.0 | Binning | 25 | 100 | N/D | N/D | N/D |
-| MetaBAT2 v2.18 | Binning | 32 | 100 | N/D | N/D | N/D |
-| Vamb v5.0.4 | Binning de MEGAHIT | 32 | 100 | N/D | N/D | N/D |
-| Vamb v5.0.4 | Binning de metaSPAdes | 12 | 20 | N/D | N/D | N/D |
-| DAS Tool v1.1.7 | Integración y refinamiento de bins | 24 | 250 | N/D | N/D | N/D |
-| CheckM2 v1.1.0 | Calidad de bins y MAGs | 24 | 25 | N/D | N/D | N/D |
-| GUNC v1.0.6 | Evaluación de contaminación entre linajes | 24 | 25 | N/D | N/D | N/D |
-| dRep v3.6.2 | Desreplicación de MEGAHIT y catálogo final | 24 | 100 | N/D | N/D | N/D |
-| dRep v3.6.2 | Desreplicación de metaSPAdes | 24 | 50 | N/D | N/D | N/D |
-| GTDB-Tk v2.6.1 | Clasificación taxonómica | 24 | 100 | N/D | N/D | N/D |
-| PhyloPhlAn v3.1.1 / IQ-TREE v3.0.1 | Análisis filogenómico | 32 | 120 | N/D | N/D | N/D |
-| GeneMarkS-2 v1.15 | Predicción de genes por MAG | 1 | 20 | N/D | N/D | N/D |
-| eggNOG-mapper v2.1.13 | Anotación funcional por MAG | 5 | 30 | N/D | N/D | N/D |
-| InterProScan v5.59-91.0 | Anotación funcional por MAG | 16 | 128 | N/D | N/D | N/D |
-| CoverM v0.7.0 | Abundancia del catálogo final | 24 | 100 | N/D | N/D | N/D |
-| MultiQC v1.35 | Reporte y control de calidad global | 2 | 8 | N/D | N/D | N/D |
+| SRA Toolkit v3.4.1 / pigz v2.8 | Obtención de lecturas | 12 | 19 | 1.60 | 7.40 GB | 00:15:08 |
+| FastQC v0.12.1 | Control de calidad | 4 | 19 | 1.59 | 1.75 MB | 00:04:43 |
+| fastp v1.0.1 | Filtrado de lecturas | 16 | 19 | 1.41 | 2.93 GB | 00:02:31 |
+| Bowtie2 v2.5.4 | Eliminación del hospedador | 16 | 19 | 3.84 | 7.12 GB | 00:21:47 |
+| MEGAHIT v1.2.9 | Ensamblaje | 16 | 189 | 150.80 | 2.37 GB | 1-10:25:34 |
+| metaSPAdes v4.2.0 | Ensamblaje | 16 | 811 | 648.74 | 8.42 GB | 3-04:12:15 |
+| MetaQUAST v5.3.0 | Evaluación del ensamblaje | 6 | 20 | 4.00 | 1.90 MB | 00:06:11 |
+| CoverM v0.7.0 | Cobertura de contigs | 16 | 100 | 32.17 | 117.69 GB | 03:08:00 |
+| COMEBin v1.0.4 | Binning | 16 | 194 | 155.14 | 2.18 GB | 5-05:05:47 |
+| SemiBin2 v1.5.0 | Binning | 16 | 243 | 193.63 | 1.92 GB | 11:48:05 |
+| MetaBAT2 v2.18 | Binning | 16 | 100 | 5.35 | 1.65 GB | 01:06:47 |
+| Vamb v5.0.4 | Binning | 16 | 100 | 4.85 | 2.22 GB | 01:57:58 |
+| DAS Tool v1.1.7 | Refinamiento de bins | 16 | 128 | 3.01 | 1.16 GB | 00:29:54 |
+| CheckM2 v1.1.0 | Evaluación de MAGs | 16 | 25 | 18.12 | 3.08 GB | 00:25:47 |
+| GUNC v1.0.6 | Coherencia taxonómica | 16 | 25 | 11.70 | 13.00 GB | 01:14:04 |
+| dRep v3.6.2 | Desreplicación de MAGs | 16 | 100 | 7.80 | 784.63 MB | 00:55:58 |
+| GTDB-Tk v2.6.1 | Clasificación taxonómica | 16 | 126 | 100.46 | 151.03 GB | 02:55:22 |
+| PhyloPhlAn v3.1.1 / IQ-TREE v3.0.1 | Análisis filogenómico | 16 | 120 | 30.29 | 3.76 GB | 1-04:01:26 |
+| GeneMarkS-2 v1.15 | Predicción de genes | 1 | 20 | 0.39 | 9.25 MB | 00:00:57 |
+| eggNOG-mapper v2.1.13 | Anotación funcional | 5 | 30 | 6.87 | 48.10 GB | 00:41:35 |
+| InterProScan v5.59-91.0 | Anotación funcional | 16 | 128 | 8.99 | 15.02 GB | 01:59:23 |
+| CoverM v0.7.0 | Abundancia de MAGs | 16 | 100 | 25.83 | 1.45 MB | 02:21:05 |
+| MultiQC v1.35 | Reporte global | 2 | 8 | 1.50 | 30 MB | 00:03:00 |
 
-Las mayores **solicitudes de memoria** corresponden a metaSPAdes, MEGAHIT y DAS Tool. Los límites máximos por tarea son `max_cpus = 32`, `max_memory = '1800 GB'` y `max_time = '14d'`. SRA Toolkit y pigz comparten asignación; fastp utiliza seis hilos aunque solicita 16 CPU. Se requiere **Nextflow ≥26.04.6**, Java compatible y el entorno de ejecución seleccionado. Estas asignaciones justifican utilizar infraestructura HPC. El perfil `hpc` desactiva reportes, trazas y cronogramas de recursos; los consumos deben verificarse con registros del planificador u otra monitorización explícita.
+Los tiempos por etapa sumaron aproximadamente **293.72 horas**. Las etapas con mayor demanda de memoria fueron **metaSPAdes**, **SemiBin2** y **COMEBin**, por lo que se recomienda el uso de infraestructura HPC. Según la nota de la tabla, la RAM pico corresponde a MaxRSS de SLURM y el tiempo a la mayor duración por tarea; el almacenamiento excluye entradas enlazadas y archivos internos de Nextflow. Los tiempos utilizan el formato `días-hh:mm:ss` o `hh:mm:ss`.
 
 ## Dataset
 
@@ -54,7 +51,7 @@ Las mayores **solicitudes de memoria** corresponden a metaSPAdes, MEGAHIT y DAS 
 | Tipo de datos | Secuenciación metagenómica shotgun paired-end |
 | Fuente original | Sequence Read Archive (SRA) |
 
-El manifiesto metagenómico identifica los controles mediante **`CT`**, equivalente al grupo **HC** descrito aquí. Los valores originales `PD` y `CT` se conservan durante el procesamiento.
+El manifiesto utiliza `CT` para identificar los controles, equivalente al grupo HC.
 
 ## Entradas
 
@@ -62,65 +59,69 @@ El pipeline requiere cuatro grupos principales de archivos de entrada.
 
 ### 1. Lecturas metagenómicas
 
-El modo local recibe archivos FASTQ paired-end, comprimidos o sin comprimir, mediante `--input`. Las rutas relativas del samplesheet se resuelven respecto al directorio del CSV. Por ejemplo, el usuario puede proporcionar:
+El pipeline admite archivos FASTQ locales o su adquisición desde SRA mediante BioProject y manifiesto TSV.
+
+Para el modo local, las lecturas paired-end pueden organizarse en:
 
 ```text
 /ruta/datos/fastq/
 ```
 
-Cada muestra debe disponer de una lectura forward y otra reverse:
+Cada muestra contiene dos archivos:
 
 ```text
 <sample_id>_R1.fastq.gz
 <sample_id>_R2.fastq.gz
 ```
 
-El modo SRA utiliza `--sra-project PRJNA782492` y `--sra-samples` para resolver corridas metagenómicas paired-end del manifiesto, adquirir sus lecturas y combinar las del mismo BioSample. Los modos son excluyentes; los FASTQ no están incluidos en GitHub.
+Las rutas se especifican mediante `--input`. En modo SRA se utilizan `--sra-project` y `--sra-samples`; las corridas del mismo BioSample se combinan antes del procesamiento.
 
 ### 2. Samplesheet y manifiesto de muestras
 
-El manifiesto completo de selección SRA se encuentra en:
+El manifiesto de las 95 muestras se encuentra en:
 
 ```text
 assets/raw/PRJNA782492_metagenomic_samples.tsv
 ```
 
-Contiene 95 BioSamples y dos columnas separadas por tabuladores. Este fragmento reproduce identificadores y grupos reales:
+El archivo utiliza la siguiente estructura, con columnas separadas por tabuladores:
 
-```tsv
+```text
 biosample_accession	group
 SAMN29531760	PD
 SAMN29531788	CT
 ```
 
-El archivo `assets/raw/PRJNA782492_subset8.tsv` selecciona ocho BioSamples, cuatro por grupo, sin acreditar una ejecución terminada.
-
-Para lecturas locales se proporciona la plantilla:
+Para archivos FASTQ locales se proporciona la plantilla:
 
 ```text
 assets/samplesheet.csv
 ```
 
-Su contenido es ilustrativo y debe reemplazarse por rutas reales:
+Contiene un ejemplo que debe adaptarse a las lecturas disponibles:
 
-```csv
+```text
 sample,fastq_1,fastq_2
 sample_A,/path/to/sample_A_R1.fastq.gz,/path/to/sample_A_R2.fastq.gz
 ```
 
 | Columna | Descripción |
 |---|---|
-| `biosample_accession` | TSV SRA: accesión BioSample para resolver las corridas |
-| `group` | TSV SRA y CSV local opcional: grupo experimental `PD` o `CT` |
-| `sample` | Identificador único de la muestra local |
-| `fastq_1` | Ruta al archivo forward |
-| `fastq_2` | Ruta al archivo reverse |
+| `biosample_accession` | Accesión BioSample del manifiesto SRA |
+| `group` | Grupo experimental: `PD` o `CT` |
+| `sample` | Identificador de la muestra en el samplesheet local |
+| `fastq_1` | Ruta a la lectura forward |
+| `fastq_2` | Ruta a la lectura reverse |
 
-La plantilla contiene una muestra ficticia, no las 95 muestras. Admite una columna `group`, detectada automáticamente, u otra indicada con `--group-column`. metaSPAdes realiza coensamblaje global por defecto; por condición requiere `--spades-coassembly-mode condition --group-column group`. `--sra-run-info` admite un CSV RunInfo existente.
+`assets/samplesheet.csv` es una plantilla local, no el manifiesto completo de 95 muestras. Las rutas relativas se resuelven respecto al CSV y puede añadirse la columna `group`.
 
 ### 3. Referencias y bases de datos
 
-Las referencias deben estar disponibles en el entorno de ejecución. Con una raíz ilustrativa `/ruta/referencias`, `bin/prepare_databases.sh` utiliza las siguientes rutas y genera `metagenomics_databases.config`.
+Las referencias se proporcionan en el entorno de ejecución. Las siguientes rutas ilustrativas corresponden a la organización de `bin/prepare_databases.sh`:
+
+```text
+/ruta/referencias/
+```
 
 #### Referencia humana
 
@@ -129,25 +130,18 @@ Las referencias deben estar disponibles en el entorno de ejecución. Con una ra�
 /ruta/referencias/human/bowtie2/GRCh38_p14
 ```
 
-El FASTA corresponde a **GRCh38.p14 de GENCODE v44**. `host_bowtie2_index` recibe el **prefijo** del índice con sus seis archivos `.bt2` o `.bt2l`. Bowtie2 conserva mediante `--un-conc-gz` los pares sin alineamiento concordante, considerados potencialmente microbianos.
+Contiene el genoma **GRCh38.p14 de GENCODE v44** y su índice Bowtie2. El parámetro `host_bowtie2_index` recibe el prefijo del índice, acompañado de sus seis archivos `.bt2` o `.bt2l`.
 
-#### Evaluación de MAGs
+#### Calidad, taxonomía y filogenómica
 
 ```text
 /ruta/referencias/checkm2/1.1.0/
 /ruta/referencias/gunc/1.0.6/progenomes_2.1/
-```
-
-`checkm2_db` admite el archivo DIAMOND o su directorio; el preparador valida `uniref100.KO.1.dmnd`. `gunc_db` recibe el archivo `.dmnd`. La preparación vigente selecciona **ProGenomes 2.1**, mientras que el anexo representa GTDB95; la reproducción requiere conservar la base realmente utilizada.
-
-#### Taxonomía y filogenómica
-
-```text
 /ruta/referencias/gtdbtk/release226/
 /ruta/referencias/phylophlan/phylophlan/
 ```
 
-`gtdbtk_db` recibe **GTDB release 226** y `phylophlan_db` el directorio de marcadores. `phylophlan_config` utiliza por defecto `assets/phylophlan_iqtree.cfg`, junto con PhyloPhlAn e IQ-TREE en un mismo entorno.
+Se configuran mediante `checkm2_db`, `gunc_db`, `gtdbtk_db` y `phylophlan_db`. CheckM2 requiere `uniref100.KO.1.dmnd`; GUNC recibe su archivo `.dmnd`. La configuración filogenómica incluida es `assets/phylophlan_iqtree.cfg`, indicada mediante `phylophlan_config`.
 
 #### Anotación funcional
 
@@ -156,102 +150,83 @@ El FASTA corresponde a **GRCh38.p14 de GENCODE v44**. `host_bowtie2_index` recib
 /ruta/referencias/interproscan/5.59-91.0/data/
 ```
 
-`eggnog_db` contiene `eggnog.db`, `eggnog.taxa.db` y `eggnog_proteins.dmnd`. El preparador utiliza **eggNOG 5.0.2** para eggNOG-mapper v2.1.13, frente a v6.0 del anexo. `interproscan_data` recibe los datos de **InterProScan v5.59-91.0**.
+`eggnog_db` contiene `eggnog.db`, `eggnog.taxa.db` y `eggnog_proteins.dmnd`. `interproscan_data` señala los datos compatibles con InterProScan. GeneMarkS-2 requiere una instalación v1.15 y su licencia, configuradas mediante `genemark_home` y `genemark_key`.
 
 ### 4. Archivos auxiliares y configuraciones requeridas
 
-GeneMarkS-2 requiere una instalación externa v1.15 mediante `genemark_home` y su clave de licencia mediante `genemark_key`. Estos archivos se proporcionan en el entorno de ejecución. El repositorio incluye las configuraciones de recursos, módulos y planificador:
+Las rutas de las referencias se definen en una configuración externa:
 
 ```text
-nextflow.config
-nextflow_schema.json
-conf/resources.config
-conf/modules.config
-conf/hpc.config
-assets/phylophlan_iqtree.cfg
-assets/multiqc_config.yml
+/ruta/referencias/metagenomics_databases.config
 ```
 
-Las rutas de referencias se cargan con `--database-config /ruta/referencias/metagenomics_databases.config`, o mediante los parámetros Nextflow correspondientes. Los parámetros opcionales `interproscan_fingerprintscan_path`, `interproscan_cath_resolve_hits_path` e `interproscan_ps_path` permiten especificar ejecutables auxiliares según el entorno.
-
-La configuración aplica fastp con Phred 30 y longitud mínima de 30 bases, y contigs de al menos `min_contig_length = 1500` bases para binning. La selección exige **completitud >90% y contaminación <5%** según CheckM2; GUNC evalúa los bins sin filtrarlos automáticamente. Se desreplica al **99% ANI**, con cobertura mínima de comparación del **30%**, por rama y tras combinar ambos ensambladores; se generan representantes al **95% ANI** por separado. El anexo representa 99.5% y desigualdades inclusivas, diferentes del código vigente.
+Este archivo se carga con `--database-config`. El repositorio incluye `nextflow.config`, `nextflow_schema.json`, las configuraciones de `conf/` y `assets/multiqc_config.yml`. La ejecución requiere **Nextflow ≥26.04.6** y el entorno seleccionado: Docker, Singularity, Apptainer o Conda.
 
 ## Estructura esperada de los datos
 
-El siguiente árbol distingue los archivos incluidos en GitHub de los datos externos. Las rutas `/ruta/datos` y `/ruta/referencias` son ejemplos; en modo SRA las lecturas se adquieren dentro del directorio de trabajo de Nextflow.
+`Metagenomics/` contiene los archivos incluidos en GitHub; `/ruta/` representa los datos y referencias proporcionados en el entorno de ejecución. Los FASTQ locales se utilizan en lugar de la adquisición desde SRA.
 
 ```text
-Metagenomics/                                  # Incluido en GitHub
-├── metagenomics_pipeline.sh
-├── main.nf
-├── nextflow.config
-├── nextflow_schema.json
-├── conf/
-├── assets/
-│   ├── samplesheet.csv                        # Plantilla local
-│   ├── raw/
-│   │   ├── PRJNA782492_metagenomic_samples.tsv # 95 BioSamples
-│   │   └── PRJNA782492_subset8.tsv             # 8 BioSamples
-│   ├── phylophlan_iqtree.cfg
-│   └── multiqc_config.yml
-├── diagrama_metagenomica.pdf
-└── Anexo_Metagenomica.pdf
+Metagenomics/
+└── assets/
+    ├── samplesheet.csv
+    ├── raw/
+    │   └── PRJNA782492_metagenomic_samples.tsv
+    ├── phylophlan_iqtree.cfg
+    └── multiqc_config.yml
 
-/ruta/datos/                                  # Externo; modo local
-├── samplesheet.csv                           # Rutas reales del usuario
-└── fastq/
-    ├── <sample_id>_R1.fastq.gz
-    └── <sample_id>_R2.fastq.gz
-
-/ruta/referencias/                            # Externo; ambos modos
-├── metagenomics_databases.config
-├── database_manifest.tsv
-├── human/
-│   ├── GRCh38.p14/GRCh38.p14.fa
-│   └── bowtie2/GRCh38_p14.*.bt2*              # Seis archivos de índice
-├── checkm2/1.1.0/                             # Incluye uniref100.KO.1.dmnd
-├── gunc/1.0.6/progenomes_2.1/                 # Contiene la base .dmnd
-├── gtdbtk/release226/
-├── phylophlan/phylophlan/
-├── eggnog/5.0.2/
-│   ├── eggnog.db
-│   ├── eggnog.taxa.db
-│   └── eggnog_proteins.dmnd
-├── interproscan/5.59-91.0/data/
-└── genemarks2/                               # Instalación y clave externas
+/ruta/
+├── datos/
+│   ├── samplesheet.csv
+│   └── fastq/
+│       ├── <sample_id>_R1.fastq.gz
+│       └── <sample_id>_R2.fastq.gz
+│
+└── referencias/
+    ├── metagenomics_databases.config
+    ├── human/
+    │   ├── GRCh38.p14/GRCh38.p14.fa
+    │   └── bowtie2/GRCh38_p14.*.bt2*
+    ├── checkm2/1.1.0/
+    ├── gunc/1.0.6/progenomes_2.1/
+    ├── gtdbtk/release226/
+    ├── phylophlan/phylophlan/
+    ├── eggnog/5.0.2/
+    ├── interproscan/5.59-91.0/data/
+    └── genemarks2/
 ```
 
 ## Salidas principales
 
 El pipeline genera:
 
-- reportes FastQC de lecturas raw y procesadas, y reportes HTML/JSON de fastp.
-- lecturas filtradas y pares sin alineamiento humano concordante, con logs de Bowtie2.
-- coensamblajes de MEGAHIT y metaSPAdes, y métricas TSV/HTML de MetaQUAST.
-- tablas de cobertura de contigs, abundancia para Vamb y archivos BAM de CoverM.
-- bins de COMEBin, SemiBin2, MetaBAT2 y Vamb, asignaciones contig–bin y refinamiento de DAS Tool.
-- tablas de calidad CheckM2, evaluaciones GUNC y selección de MAGs de alta calidad.
-- representantes y clústeres de dRep al 99% y 95% ANI, y catálogo final con trazabilidad y calidad.
-- clasificación taxonómica bacteriana y arqueana mediante GTDB-Tk.
-- alineamiento concatenado y árbol filogenómico Newick mediante PhyloPhlAn/IQ-TREE.
+- reportes FastQC de lecturas raw y procesadas.
+- reportes de filtrado de fastp y lecturas filtradas.
+- pares sin alineamiento humano concordante y logs de Bowtie2.
+- ensamblajes mediante MEGAHIT y metaSPAdes.
+- reportes de evaluación del ensamblaje mediante MetaQUAST.
+- tablas de cobertura de contigs y archivos BAM mediante CoverM.
+- bins de COMEBin, SemiBin2, MetaBAT2 y Vamb, refinados mediante DAS Tool.
+- tablas de calidad de CheckM2 y evaluaciones de GUNC.
+- MAGs seleccionados y desreplicados mediante dRep.
+- clasificación taxonómica mediante GTDB-Tk y filogenia mediante PhyloPhlAn/IQ-TREE.
 - proteínas, CDS y anotaciones GFF predichas mediante GeneMarkS-2.
-- anotaciones de eggNOG-mapper e InterProScan, e integración funcional TSV por MAG.
-- tablas de abundancia de MAGs en formatos ancho y largo mediante CoverM.
-- reporte MultiQC, versiones de software y metadata de muestras; en modo SRA, metadata de adquisición y exclusiones.
+- anotaciones de eggNOG-mapper e InterProScan, integradas por MAG.
+- tablas de abundancia de MAGs mediante CoverM.
+- reporte integrado de calidad y resultados mediante MultiQC.
 
-Los productos se organizan bajo `outdir` en `01_quality_control_and_filtering/`, `02_mag_construction/`, `03_taxonomic_classification_and_phylogenomics/`, `04_gene_prediction_and_functional_annotation/`, `05_mag_abundance_estimation/`, `06_global_processing_evaluation/` y `pipeline_info/`. Las lecturas de fastp se publican con `--save_clean_reads true`; los pares no concordantes con el hospedero se publican por defecto. Los BAM y otros productos intermedios requieren `--save_bam true` y `--save_intermediates true`, respectivamente. MultiQC integra los reportes compatibles disponibles.
+Las lecturas filtradas de fastp, los BAM y otros productos intermedios se publican mediante `--save_clean_reads true`, `--save_bam true` y `--save_intermediates true`, respectivamente.
 
 ## Resultados obtenidos
 
-El trabajo de grado **TG263006**, en el apartado Metagenómica y la Figura 6, reporta para el estudio del BioProject PRJNA782492:
+El análisis metagenómico reportado en el trabajo de grado permitió obtener:
 
-- **356 MAGs de alta calidad**, tras desreplicación al **99% ANI**.
+- **356 MAGs de alta calidad**, con completitud >90% y contaminación <5%.
 - **98.43% de completitud promedio** y **0.73% de contaminación promedio**.
-- **Siete filos bacterianos y dos arqueanos**, con predominio de **Bacillota (194 MAGs)** y **Bacteroidota (78 MAGs)**.
+- **Siete filos bacterianos y dos arqueanos**.
+- **194 MAGs de Bacillota** y **78 MAGs de Bacteroidota**.
 
-La tesis describe una selección de 95 muestras y criterios de completitud >90% y contaminación <5%. Estas cifras son **resultados previos reportados**, sin catálogo ni registros en el repositorio que los vinculen a una ejecución concreta de esta versión. Los manifiestos de 95 y ocho muestras describen entradas; no permiten certificar la finalización del piloto, del preprocesamiento de 95 muestras ni de su análisis completo. Los 356 MAGs no se atribuyen a una ejecución productiva nueva ni al subconjunto de ocho muestras.
-
-Los MAGs, sus anotaciones funcionales y sus abundancias permiten relacionar genomas microbianos, genes y funciones biológicas con la actividad transcripcional y los metabolitos durante la integración multiómica posterior.
+Estos resultados son utilizados posteriormente en la etapa de integración multiómica para relacionar MAGs, genes, funciones biológicas, actividad transcripcional y metabolitos.
 
 ## Ejecución
 
@@ -259,63 +234,49 @@ La ejecución del pipeline se gestiona mediante:
 
 [`metagenomics_pipeline.sh`](./metagenomics_pipeline.sh)
 
-Este script lanza **una ejecución de Nextflow**: `--local` utiliza el ejecutor local y `--hpc` envía tareas a **SLURM**. `--docker` selecciona Docker para ejecución local y `--singularity` selecciona Singularity, también en HPC. Admite además `--conda` y `--apptainer`; Docker no es compatible con `--hpc`.
+Este script ejecuta **Nextflow** con los perfiles local o HPC y el entorno seleccionado. En HPC, Nextflow envía las tareas al planificador **SLURM**, utilizando Singularity o Apptainer.
 
-Desde el directorio `Metagenomics/`, pueden utilizarse los siguientes modos. Todas las rutas `/ruta/...` son ilustrativas y deben sustituirse por archivos y directorios del entorno de ejecución.
+Desde el directorio `Metagenomics/`, se encuentran disponibles los siguientes modos de ejecución. Las rutas `/ruta/...` deben sustituirse por las del entorno de trabajo.
 
 ```bash
 ./metagenomics_pipeline.sh --local --docker --run \
   --input /ruta/datos/samplesheet.csv \
-  --database-config /ruta/referencias/metagenomics_databases.config \
-  --outdir /ruta/resultados/local --work-dir /ruta/trabajo/local
+  --database-config /ruta/referencias/metagenomics_databases.config
 ```
 
-Ejecuta el pipeline con lecturas locales y un samplesheet real. La plantilla de GitHub debe adaptarse antes de utilizarla.
+Ejecuta el pipeline localmente con Docker y lecturas FASTQ.
 
 ```bash
 ./metagenomics_pipeline.sh --hpc --singularity --run \
   --sra-project PRJNA782492 \
   --sra-samples assets/raw/PRJNA782492_metagenomic_samples.tsv \
-  --database-config /ruta/referencias/metagenomics_databases.config \
-  --slurm_queue particion_del_cluster \
-  --outdir /ruta/resultados/PRJNA782492 --work-dir /ruta/trabajo/PRJNA782492
+  --database-config /ruta/referencias/metagenomics_databases.config
 ```
 
-Ejecuta la selección SRA mediante SLURM y Singularity. La partición y, cuando correspondan, `--slurm_account` y `--slurm_qos` deben ajustarse al clúster. El proceso coordinador de Nextflow debe mantenerse activo o ejecutarse dentro de una asignación apropiada del clúster.
+Ejecuta el análisis de las muestras seleccionadas desde SRA mediante SLURM y Singularity.
 
 ```bash
 ./metagenomics_pipeline.sh --hpc --singularity --run --resume \
   --sra-project PRJNA782492 \
   --sra-samples assets/raw/PRJNA782492_metagenomic_samples.tsv \
-  --database-config /ruta/referencias/metagenomics_databases.config \
-  --slurm_queue particion_del_cluster \
-  --outdir /ruta/resultados/PRJNA782492 --work-dir /ruta/trabajo/PRJNA782492
+  --database-config /ruta/referencias/metagenomics_databases.config
 ```
 
-Reanuda con `-resume` de Nextflow desde el mismo directorio de lanzamiento, conservando el directorio de trabajo, la caché y las entradas de la ejecución anterior.
+Reanuda una ejecución interrumpida utilizando `-resume` de Nextflow, desde el mismo directorio de lanzamiento y conservando la caché y el directorio de trabajo.
 
-```bash
-./metagenomics_pipeline.sh --local --prepare-databases \
-  --db-root /ruta/referencias \
-  --genemark-home /ruta/referencias/genemarks2 \
-  --genemark-key /ruta/licencias/clave_genemark
-```
+La preparación de referencias se realiza con `./metagenomics_pipeline.sh --local --prepare-databases --db-root /ruta/referencias`, proporcionando la instalación y clave de GeneMarkS-2 mediante `--genemark-home` y `--genemark-key`.
 
-Prepara y valida las referencias mediante `bin/prepare_databases.sh`, y genera el manifiesto de bases de datos y su configuración Nextflow. Este modo no inicia el workflow, no recibe una opción de contenedor y requiere las herramientas de preparación en el entorno, además de la instalación y licencia externas de GeneMarkS-2. `--dry-run` permite revisar el comando del lanzador sin iniciar la ejecución.
-
-Antes de ejecutar deben estar disponibles las lecturas o el manifiesto SRA, las referencias y las configuraciones descritas en **Entradas**.
+Antes de ejecutar el pipeline deben estar disponibles las lecturas o el manifiesto SRA, las referencias y las configuraciones descritas en la sección **Entradas**, respetando la estructura de directorios esperada.
 
 ## Documentación detallada
 
-El flujo completo, incluyendo decisiones internas, herramientas, filtros, procedimientos y productos intermedios, se encuentra en:
+El flujo completo, incluyendo decisiones internas, filtros, criterios de selección y salidas intermedias, se encuentra en:
 
 [`Flujo completo de metagenomica.pdf`](./Anexo_Metagenomica.pdf)
 
-Los diagramas se conservan en su versión original. Las diferencias respecto a la implementación vigente se explican en **Entradas**, especialmente para las bases GUNC y eggNOG y los criterios de selección y desreplicación de MAGs.
-
 ## Relación con otros módulos
 
-Los MAGs generados por este pipeline sirven como referencia genómica para el módulo de:
+Los MAGs generados por este pipeline sirven como referencia para el módulo de:
 
 [`../Metatranscriptomics`](../Metatranscriptomics)
 
