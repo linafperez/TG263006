@@ -84,8 +84,6 @@ La selección aplica los siguientes criterios:
 - **Fortaleza de instrumentos:** F ≥ 10, calculada como F = (β/SE)².
 - **Frecuencia en el desenlace:** EAF disponible y superior a 0.01.
 
-Estos criterios seleccionan variantes asociadas, reducen la redundancia genética y descartan instrumentos débiles o con ambigüedad alélica. El código aplica los filtros de significancia, LD y F por separado a exposición y desenlace.
-
 La armonización alinea los alelos de efecto entre ambas fuentes. `MR.Rmd` requiere el archivo **`PD_harmonised.txt` preparado previamente**; su generación no está implementada en los tres archivos disponibles. Posteriormente, **biomaRt / Ensembl** permiten anotar posiciones, consecuencias funcionales e identificadores de genes humanos asociados a los SNPs.
 
 ## Estimación causal
@@ -125,14 +123,12 @@ Los scripts y el documento R Markdown definen las siguientes salidas:
 
 ## Resultados obtenidos
 
-El trabajo de grado reportó evidencia compatible con un posible efecto protector del género **Bifidobacterium** frente al riesgo de Parkinson:
+Posible efecto protector del género **Bifidobacterium** frente al riesgo de Parkinson:
 
 - **IVW, cinco SNPs:** OR = 0,51; IC del 95 %: 0,44–0,59; p = 1,40 × 10⁻¹⁸.
 - **Mediana ponderada:** OR = 0,55; p = 2,70 × 10⁻⁸.
 - **Moda ponderada:** OR = 0,56; p = 0,004.
 - **Razón de Wald, un SNP:** OR = 0,46; p = 1,09 × 10⁻⁷.
-
-Las pruebas de sensibilidad reportaron **MR-Egger p = 0,075** y **MR-PRESSO p = 0,507**. Estos resultados aportan evidencia compatible con una asociación protectora, condicionada a los supuestos de la aleatorización mendeliana; no demuestran causalidad. Los instrumentos corresponden a SNPs humanos asociados con taxones intestinales.
 
 ## Ejecución
 
