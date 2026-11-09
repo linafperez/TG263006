@@ -38,7 +38,7 @@ Los siguientes valores corresponden al consumo observado durante la ejecución d
 | CoverM v0.7.0 | Abundancia de MAGs | 16 | 100 | 25.83 | 1.45 MB | 02:21:05 |
 | MultiQC v1.35 | Reporte global | 2 | 8 | 1.50 | 30 MB | 00:03:00 |
 
-Los tiempos por etapa sumaron aproximadamente **293.72 horas**. Las etapas con mayor demanda de memoria fueron **metaSPAdes**, **SemiBin2** y **COMEBin**, por lo que se recomienda el uso de infraestructura HPC. Según la nota de la tabla, la RAM pico corresponde a MaxRSS de SLURM y el tiempo a la mayor duración por tarea; el almacenamiento excluye entradas enlazadas y archivos internos de Nextflow. Los tiempos utilizan el formato `días-hh:mm:ss` o `hh:mm:ss`.
+La ejecución completa del pipeline sobre las 95 muestras requirió aproximadamente **12 días, 5 horas y 43 minutos**. Las etapas con mayor demanda de memoria RAM fueron **metaSPAdes**, **SemiBin2** y **COMEBin**, por lo que se recomienda el uso de infraestructura HPC. 
 
 ## Dataset
 
@@ -112,8 +112,6 @@ sample_A,/path/to/sample_A_R1.fastq.gz,/path/to/sample_A_R2.fastq.gz
 | `sample` | Identificador de la muestra en el samplesheet local |
 | `fastq_1` | Ruta a la lectura forward |
 | `fastq_2` | Ruta a la lectura reverse |
-
-`assets/samplesheet.csv` es una plantilla local, no el manifiesto completo de 95 muestras. Las rutas relativas se resuelven respecto al CSV y puede añadirse la columna `group`.
 
 ### 3. Referencias y bases de datos
 
