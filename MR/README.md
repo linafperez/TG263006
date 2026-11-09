@@ -23,7 +23,6 @@ El análisis comprende la **preparación de exposición y desenlace**, **selecci
 | forestploter | Visualización de estimaciones mediante forest plots |
 
 
-
 ## Fuentes de datos
 
 El análisis utiliza estadísticas resumidas de fuentes GWAS independientes para la exposición y el desenlace.
@@ -33,9 +32,7 @@ El análisis utiliza estadísticas resumidas de fuentes GWAS independientes para
 | Exposición: microbioma intestinal | Consorcio MiBioGen ([Kurilshikov et al., 2021](https://doi.org/10.1038/s41588-020-00763-1)) | Asociaciones entre variantes humanas y abundancia relativa de 211 taxones; 18 340 participantes de 24 cohortes |
 | Desenlace: Parkinson en EUR | Global Parkinson's Genetics Program, GP2 ([Leonard et al., 2025](https://doi.org/10.1101/2025.03.14.24319455)) | Asociaciones genéticas con Parkinson en poblaciones europeas |
 | Desenlace: Parkinson en EUR | FinnGen ([Kurki et al., 2023](https://doi.org/10.1038/s41586-022-05473-8)) | Asociaciones genéticas con Parkinson en población finlandesa |
-| Desenlace: Parkinson en LATAM | GWAS latinoamericano (publicación de origen pendiente de verificar) | Asociaciones genéticas con Parkinson en población latinoamericana |
-
-Los scripts utilizan los archivos de exposición de MiBioGen y tres archivos de desenlace identificados como GP2, FinnGen y GWAS latinoamericano. Las referencias bibliográficas corresponden a las fuentes identificadas, aunque la versión específica de cada conjunto de estadísticas resumidas no se encuentra documentada en el código.
+| Desenlace: Parkinson en LATAM | Latin American Research Consortium on the Genetics of Parkinson's Disease, LARGE-PD ([Loesch et al., 2021](https://doi.org/10.1002/ana.26153)) | Asociaciones genéticas con Parkinson en población latinoamericana |
 
 ## Entradas
 
