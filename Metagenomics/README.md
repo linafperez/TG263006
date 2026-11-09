@@ -10,7 +10,7 @@ El flujo comprende las etapas de **obtención de lecturas**, **preprocesamiento 
 
 ## Software y requerimientos computacionales
 
-Los siguientes valores reproducen los requerimientos y el consumo computacional estimados para **95 muestras**, presentados en la Tabla 2 del trabajo de grado.
+Los siguientes valores corresponden al consumo observado durante la ejecución del pipeline sobre **95 muestras**.
 
 | Software y versión | Módulo / etapa | CPU | RAM asignada (GB) | RAM pico (GB) | Almacenamiento | Tiempo |
 |---|---|---:|---:|---:|---:|---:|
