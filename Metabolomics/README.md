@@ -88,7 +88,7 @@ incluida al final del documento R Markdown.
 
 ## Alcance del código R Markdown
 
-El código disponible en este repositorio (https://github.com/linafperez/TG263006/blob/main/Metabolomics/Metabolomics_analysis.Rmd) corresponde principalmente a la etapa de **posprocesamiento, consenso y consolidación** del workflow metabolómico.
+El código disponible en este repositorio corresponde principalmente a la etapa de **posprocesamiento, consenso y consolidación** del workflow metabolómico.
 
 El R Markdown:
 
