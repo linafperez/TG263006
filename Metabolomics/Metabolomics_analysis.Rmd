@@ -214,7 +214,7 @@ sPLS.DA <- read.csv("../LC-MS/Negative/Results/splsda_loadings.csv") %>%
 RF <- read.csv("../LC-MS/Negative/Results/randomforests_sigfeatures.csv") %>%
   rename(Metabolite = X) %>%
   arrange(desc(MeanDecreaseAccuracy)) %>%
-  slice_head(prop = 0.1) 
+  slice_head(prop = 0.05) 
 norm_data <- read.csv("../LC-MS/Negative/Results/data_normalized2.csv") %>%
   rename(Metabolite = X)
 
@@ -307,7 +307,7 @@ sPLS.DA <- read.csv("../GC-MS/Results/splsda_loadings.csv") %>%
 RF <- read.csv("../GC-MS/Results/randomforests_sigfeatures.csv") %>%
   rename(Metabolite = X) %>%
   arrange(desc(MeanDecreaseAccuracy)) %>%
-  slice_head(prop = 0.1)
+  slice_head(prop = 0.5)
 norm_data <- read.csv("../GC-MS/Results/data_normalized2.csv") %>%
   rename(Metabolite = X)
 
