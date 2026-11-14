@@ -1,6 +1,6 @@
 ---
 title: "Metatranscriptomics and Metagenomics Integration"
-author: "Alexis Felipe Rojas Cruz"
+author: "Gabriela Bonilla Ramírez"
 output:
   html_document:
     toc: true
